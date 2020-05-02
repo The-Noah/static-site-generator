@@ -10,8 +10,6 @@ const terser = require("terser");
 const srcDir = path.join(process.cwd(), "src");
 const buildDir = path.join(process.cwd(), "build");
 const staticDir = path.join(srcDir, "static");
-const stylePath = path.join(srcDir, "style.scss");
-const jsPath = path.join(srcDir, "app.js");
 
 let watch = false;
 if(process.argv[2] === "watch"){
@@ -71,36 +69,38 @@ const build = () => {
     copyFolder(staticDir, buildDir);
   }
 
-  const data = {};
+  const data = {
+    css: {},
+    js: {}
+  };
 
   fs.readdirSync(srcDir).forEach((fileName) => {
     const filePath = path.join(srcDir, fileName);
     const file = path.parse(filePath);
 
-    if(file.ext === ".json"){
-      data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
-      log.success(`parsed ${file.base}`);
+    switch(file.ext){
+      case ".json":
+        data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+        log.success(`parsed ${file.base}`);
+        break;
+      case ".scss":
+        data.css[file.name] = (sass.renderSync({
+          file: filePath,
+          outputStyle: "compressed"
+        })).css.toString();
+
+        log.success(`compiled ${file.base}`);
+        break;
+      case ".js":
+        data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
+
+        log.success(`compressed ${file.base}`);
+        break;
+      default:
+        break;
     }
   });
-
-  if(fs.existsSync(stylePath)){
-    data.css = (sass.renderSync({
-      file: stylePath,
-      outputStyle: "compressed"
-    })).css.toString();
-
-    log.success("compiled stylesheet");
-  }else{
-    log.warning("no src/style.scss - this is NOT an error!");
-  }
-
-  if(fs.existsSync(jsPath)){
-    data.js = terser.minify(fs.readFileSync(jsPath, "utf8")).code;
-
-    log.success("compressed javascript");
-  }else{
-    log.warning("no src/app.js - this is NOT an error!");
-  }
 
   ejs.renderFile(path.join(srcDir, "index.ejs"), data, (err, html) => {
     if(err){
