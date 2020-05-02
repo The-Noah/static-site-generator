@@ -1,0 +1,23 @@
+{
+  "name": "static-site-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/The-Noah/static-site-generator.git"
+  },
+  "author": "The Noah (https://github.com/The-Noah)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/The-Noah/static-site-generator/issues"
+  },
+  "homepage": "https://github.com/The-Noah/static-site-generator#readme",
+  "bin": {
+    "static-site-generator": "app.js"
+  }
+}
