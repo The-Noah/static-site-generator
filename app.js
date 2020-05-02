@@ -59,6 +59,13 @@ const copyFolder = (source, target) => {
 const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
 
+  if(!fs.existsSync(srcDir)){
+    return log.error("no src in current directory");
+  }
+  if(!fs.existsSync(path.join(srcDir, "index.ejs"))){
+    return log.error("no index.ejs in src directory");
+  }
+
   if(fs.existsSync(buildDir)){
     deleteFolder(buildDir);
   }
