@@ -22,36 +22,53 @@ const log = {
   success: (message) => console.log(`[\x1b[32m+${RESET}]`, message),
   error: (message) => console.error(`[\x1b[31m-${RESET}]`, message),
   warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
-}
+};
 
-const deleteFolder = (dir) => {
+const recurseDirectory = (dir, fileCallback, directoryCallback) => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
 
     if(fs.lstatSync(currentPath).isDirectory()){
-      deleteFolder(currentPath);
-    }else{
-      fs.unlinkSync(currentPath);
+      if(directoryCallback){
+        directoryCallback(currentPath);
+      }
+
+      recurseDirectory(currentPath, fileCallback, directoryCallback);
+    }else if(fileCallback){
+      fileCallback(currentPath);
     }
   });
+};
+
+const deleteDirectory = (dir) => {
+  const dirsToRemove = [];
+
+  recurseDirectory(dir, (file) => {
+    fs.unlinkSync(file);
+  }, (dir) => {
+    dirsToRemove.push(dir);
+  });
+
+  for(const dirToRemove of dirsToRemove){
+    fs.rmdirSync(dirToRemove);
+  }
 
   fs.rmdirSync(dir);
 };
 
-const copyFolder = (source, target) => {
+const copyDirectory = (source, target) => {
   if(!fs.existsSync(target)){
     fs.mkdirSync(target);
   }
 
-  fs.readdirSync(source).forEach((file) => {
-    const currentSource = path.join(source, file);
-    const currentTarget = path.join(target, file);
+  recurseDirectory(source, (file) => {
+    fs.copyFileSync(file, path.join(target, file.split(source)[1]));
+    log.success(`copied ${path.parse(file).base}`);
+  }, (dir) => {
+    const newDir = path.join(target, dir.split(source)[1]);
 
-    if(fs.lstatSync(currentSource).isDirectory()){
-      copyFolder(currentSource, currentTarget);
-    }else{
-      fs.copyFileSync(currentSource, currentTarget);
-      log.success(`copied ${path.parse(file).base}`);
+    if(!fs.existsSync(newDir)){
+      fs.mkdirSync(newDir);
     }
   });
 };
@@ -68,13 +85,13 @@ const build = () => {
   }
 
   if(fs.existsSync(buildDir)){
-    deleteFolder(buildDir);
+    deleteDirectory(buildDir);
   }
   fs.mkdirSync(buildDir);
 
   if(fs.existsSync(staticDir)){
     log.info("copying static files...");
-    copyFolder(staticDir, buildDir);
+    copyDirectory(staticDir, buildDir);
   }
 
   const data = {
@@ -84,8 +101,7 @@ const build = () => {
 
   const pages = [];
 
-  fs.readdirSync(srcDir).forEach((fileName) => {
-    const filePath = path.join(srcDir, fileName);
+  recurseDirectory(srcDir, (filePath) => {
     const file = path.parse(filePath);
 
     switch(file.ext){
@@ -117,13 +133,18 @@ const build = () => {
 
   for(const filePath of pages){
     const file = path.parse(filePath);
+    const targetDir = path.parse(path.join(buildDir, filePath.split(srcDir)[1])).dir;
+
+    if(!fs.existsSync(targetDir)){
+      fs.mkdirSync(targetDir);
+    }
 
     ejs.renderFile(filePath, data, (err, html) => {
       if(err){
         return log.error(err);
       }
 
-      fs.writeFileSync(path.join(buildDir, `${file.name}.html`), htmlMinify(html, {
+      fs.writeFileSync(path.join(targetDir, `${file.name}.html`), htmlMinify(html, {
         html5: true,
         // collapseInlineTagWhitespace: true,
         minifyCSS: true,
