@@ -124,6 +124,12 @@ const build = () => {
         log.success(`compressed ${file.base}`);
         break;
       case ".ejs":
+        const page = fs.readFileSync(filePath, "utf8");
+        if(!page.startsWith("<!DOCTYPE html>")){
+          log.info(`${file.base} doesn't appear to be a page - skipping`);
+          break;
+        }
+
         pages.push(filePath);
         break;
       default:
