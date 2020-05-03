@@ -21,7 +21,7 @@ const log = {
   info: (message) => console.log(`[\x1b[36mi${RESET}]`, message),
   success: (message) => console.log(`[\x1b[32m+${RESET}]`, message),
   error: (message) => console.error(`[\x1b[31m-${RESET}]`, message),
-  warning: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
+  warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
 }
 
 const deleteFolder = (dir) => {
@@ -62,8 +62,9 @@ const build = () => {
   if(!fs.existsSync(srcDir)){
     return log.error("no src in current directory");
   }
+
   if(!fs.existsSync(path.join(srcDir, "index.ejs"))){
-    return log.error("no index.ejs in src directory");
+    log.warn("no index.ejs in src directory - this is NOT an error!");
   }
 
   if(fs.existsSync(buildDir)){
@@ -80,6 +81,8 @@ const build = () => {
     css: {},
     js: {}
   };
+
+  const pages = [];
 
   fs.readdirSync(srcDir).forEach((fileName) => {
     const filePath = path.join(srcDir, fileName);
@@ -104,26 +107,35 @@ const build = () => {
 
         log.success(`compressed ${file.base}`);
         break;
+      case ".ejs":
+        pages.push(filePath);
+        break;
       default:
         break;
     }
   });
 
-  ejs.renderFile(path.join(srcDir, "index.ejs"), data, (err, html) => {
-    if(err){
-      return log.error(err);
-    }
+  for(const filePath of pages){
+    const file = path.parse(filePath);
 
-    fs.writeFileSync(path.join(buildDir, "index.html"), htmlMinify(html, {
-      html5: true,
-      // collapseInlineTagWhitespace: true,
-      minifyCSS: true,
-      removeComments: true,
-      removeRedundantAttributes: true,
-      removeTagWhitespace: true,
-      collapseWhitespace: true
-    }));
-  });
+    ejs.renderFile(filePath, data, (err, html) => {
+      if(err){
+        return log.error(err);
+      }
+
+      fs.writeFileSync(path.join(buildDir, `${file.name}.html`), htmlMinify(html, {
+        html5: true,
+        // collapseInlineTagWhitespace: true,
+        minifyCSS: true,
+        removeComments: true,
+        removeRedundantAttributes: true,
+        removeTagWhitespace: true,
+        collapseWhitespace: true
+      }));
+    });
+
+    log.success(`rendered ${file.base}`);
+  }
 
   log.info("done!");
 };
