@@ -1,5 +1,5 @@
 {
-  "name": "static-site-generator",
+  "name": "@the-noah/static-site-generator",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
