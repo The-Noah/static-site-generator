@@ -171,12 +171,14 @@ if(watch){
   log.info("watching files for changes...");
   build();
 
-  fs.watch(srcDir, (event, file) => {
-    try{
-      build();
-    }catch(err){
-      log.error(err);
-    }
+  recurseDirectory(srcDir, undefined, (dir) => {
+    fs.watch(dir, (event, file) => {
+      try{
+        build();
+      }catch(err){
+        log.error(err);
+      }
+    });
   });
 }else{
   build();
