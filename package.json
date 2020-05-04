@@ -19,5 +19,11 @@
   "homepage": "https://github.com/The-Noah/static-site-generator#readme",
   "bin": {
     "static-site-generator": "app.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.2",
+    "html-minifier": "^4.0.0",
+    "node-sass": "^4.14.0",
+    "terser": "^4.6.13"
   }
 }
