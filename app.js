@@ -175,19 +175,21 @@ const build = () => {
   log.info("done!");
 };
 
+build();
+
 if(watch){
   log.info("watching files for changes...");
-  build();
 
+  const changed = (event, file) => {
+    try{
+      build();
+    }catch(err){
+      log.error(err);
+    }
+  };
+
+  fs.watch(srcDir, changed);
   recurseDirectory(srcDir, undefined, (dir) => {
-    fs.watch(dir, (event, file) => {
-      try{
-        build();
-      }catch(err){
-        log.error(err);
-      }
-    });
+    fs.watch(dir, changed);
   });
-}else{
-  build();
 }
