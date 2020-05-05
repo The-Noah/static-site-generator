@@ -110,6 +110,14 @@ const build = () => {
 
         log.success(`parsed ${file.base}`);
         break;
+      case ".css":
+        data.css[file.name] = (sass.renderSync({
+          file: filePath,
+          outputStyle: "compressed"
+        })).css.toString();
+
+        log.success(`compressed ${file.base}`);
+        break;
       case ".scss":
         data.css[file.name] = (sass.renderSync({
           file: filePath,
