@@ -56,7 +56,7 @@ Add `static-site-generator` as a script in your `package.json` to build your web
 
 ## Configuration (optional)
 
-The configuration file is must be named `.static-site-generator.config.json` and must be in the root of your project. Configuration is available in `options`.
+The configuration file must be named `.static-site-generator.config.json` and must be in the root of your project. Configuration is available in `options`.
 
 | Property | Type   | Default | Description |
 | -------- | ------ | ------- | ----------- |
