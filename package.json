@@ -2,10 +2,12 @@
   "name": "@the-noah/static-site-generator",
   "version": "1.1.0",
   "description": "",
-  "main": "app.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "start": "node .",
-    "test": "echo \"Error: no test specified\""
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\"",
+    "prepublish": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -18,7 +20,7 @@
   },
   "homepage": "https://github.com/The-Noah/static-site-generator#readme",
   "bin": {
-    "static-site-generator": "cli.js"
+    "static-site-generator": "dist/cli.js"
   },
   "dependencies": {
     "@toptensoftware/moe-js": "^0.4.0",
@@ -26,5 +28,13 @@
     "html-minifier": "^4.0.0",
     "node-sass": "^4.14.0",
     "terser": "^4.6.13"
+  },
+  "devDependencies": {
+    "@types/ejs": "^3.0.3",
+    "@types/html-minifier": "^3.5.3",
+    "@types/node": "^13.13.5",
+    "@types/node-sass": "^4.11.0",
+    "@types/terser": "^3.12.0",
+    "typescript": "^3.8.3"
   }
 }

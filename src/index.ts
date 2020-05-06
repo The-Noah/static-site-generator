@@ -1,18 +1,20 @@
-const fs = require("fs");
-const path = require("path");
+import * as fs from "fs";
+import * as path from "path";
 
-const ejs = require("ejs");
+import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
-const sass = require("node-sass");
-const htmlMinify = require("html-minifier").minify;
-const terser = require("terser");
+
+import * as sass from "node-sass";
+import * as terser from "terser";
+import * as htmlMinifer from "html-minifier";
+const htmlMinify = htmlMinifer.minify;
 
 const RESET = "\x1b[0m";
 const log = {
-  info: (message) => console.log(`[\x1b[36mi${RESET}]`, message),
-  success: (message) => console.log(`[\x1b[32m+${RESET}]`, message),
-  error: (message) => console.error(`[\x1b[31m-${RESET}]`, message),
-  warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
+  info: (message: any) => console.log(`[\x1b[36mi${RESET}]`, message),
+  success: (message: any) => console.log(`[\x1b[32m+${RESET}]`, message),
+  error: (message: any) => console.error(`[\x1b[31m-${RESET}]`, message),
+  warn: (message: any) => console.log(`[\x1b[33m!${RESET}]`, message)
 };
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
@@ -25,7 +27,7 @@ if(fs.existsSync(configPath)){
 
   options = {
     ...options,
-    ...JSON.parse(fs.readFileSync(configPath), "utf8")
+    ...JSON.parse(fs.readFileSync(configPath, "utf8"))
   }
 }
 
@@ -33,17 +35,17 @@ options.srcDir = path.join(process.cwd(), options.srcDir);
 const buildDir = path.join(process.cwd(), "build");
 const staticDir = path.join(options.srcDir, "static");
 
-const fileHandlers = [];
-const addFileHandler = (extension, message, callback) => {
+const fileHandlers: any[] = [];
+const addFileHandler = (extension: string, message: string, callback: (data: any, file: any, filePath: string) => void) => {
   fileHandlers.push({extension, message, callback});
 };
 
-const pageHandlers = [];
-const addPageHandler = (extension, callback) => {
+const pageHandlers: any[] = [];
+const addPageHandler = (extension: string, callback: (data: any, filePath: string, callback: (html: string) => void) => void) => {
   pageHandlers.push({extension, callback});
 };
 
-const recurseDirectory = (dir, fileCallback, directoryCallback) => {
+const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void) => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
 
@@ -54,13 +56,15 @@ const recurseDirectory = (dir, fileCallback, directoryCallback) => {
 
       recurseDirectory(currentPath, fileCallback, directoryCallback);
     }else if(fileCallback){
-      fileCallback(currentPath);
+      if(fileCallback){
+        fileCallback(currentPath);
+      }
     }
   });
 };
 
-const deleteDirectory = (dir) => {
-  const dirsToRemove = [];
+const deleteDirectory = (dir: string) => {
+  const dirsToRemove: string[] = [];
 
   recurseDirectory(dir, (file) => {
     fs.unlinkSync(file);
@@ -75,7 +79,7 @@ const deleteDirectory = (dir) => {
   fs.rmdirSync(dir);
 };
 
-const copyDirectory = (source, target) => {
+const copyDirectory = (source: string, target: string) => {
   if(!fs.existsSync(target)){
     fs.mkdirSync(target);
   }
@@ -112,12 +116,12 @@ const getData = () => {
   return data;
 };
 
-const renderPage = (pagePath, data, callback) => {
+const renderPage = (pagePath: string, data: Object, callback: (html: string) => void) => {
   const file = path.parse(pagePath);
 
   for(const pageHandler of pageHandlers){
     if(file.ext === `.${pageHandler.extension}`){
-      pageHandler.callback(data, pagePath, (html) => {
+      pageHandler.callback(data, pagePath, (html: string) => {
         callback(htmlMinify(html, {
           html5: true,
           // collapseInlineTagWhitespace: true,
@@ -134,7 +138,7 @@ const renderPage = (pagePath, data, callback) => {
   }
 };
 
-let pages = [];
+let pages: string[] = [];
 const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
   pages = [];
@@ -228,7 +232,7 @@ addPageHandler("ejs", (data, filePath, callback) => {
 });
 
 addPageHandler("moe", (data, filePath, callback) => {
-  moe.compileFile(filePath, "UTF8", (err, template) => {
+  moe.compileFile(filePath, "UTF8", (err: any, template: any) => {
     if(err){
       return log.error(err);
     }
@@ -237,7 +241,9 @@ addPageHandler("moe", (data, filePath, callback) => {
   });
 });
 
-module.exports = {
+export default {
+  log,
+  recurseDirectory,
   build,
   addFileHandler,
   addPageHandler,
