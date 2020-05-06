@@ -9,6 +9,28 @@ Generates an optimized static website.
 
 </div>
 
+## Table of Contents
+
+- [Static Site Generator](#static-site-generator)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+- [Documentation](#documentation)
+  - [Installation](#installation)
+    - [Global](#global)
+    - [Project](#project)
+  - [Configuration (optional)](#configuration-optional)
+  - [Command-Line Interface (CLI)](#command-line-interface-cli)
+  - [Library](#library)
+    - [Importing](#importing)
+    - [`renderPage(pagePath, data, callback)`](#renderpagepagepath-data-callback)
+    - [`getData()`](#getdata)
+  - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
+    - [CSS & SASS](#css--sass)
+    - [JavaScript](#javascript)
+    - [JSON](#json)
+  - [Examples](#examples)
+    - [Express Server](#express-server)
+
 ## Features
 
 1. Compiles and optimizes SCSS files.
@@ -60,7 +82,7 @@ const staticSiteGenerator = require("@the-noah/static-site-generator");
 import * as staticSiteGenerator from "@the-noah/static-site-generator";
 ```
 
-### renderPage(pagePath, data, callback)
+### `renderPage(pagePath, data, callback)`
 
 Renders the page found at `pagePath` with the data `data` and calls `callback` with the resulting minified HTML.
 
@@ -79,7 +101,7 @@ staticSiteGenerator.renderPage("index.ejs",  {message: "Hello, World"}, (html: s
 });
 ```
 
-### getData()
+### `getData()`
 
 Returns all data from files found in `options.srcDir`.
 
@@ -156,7 +178,8 @@ console.log(blog[0].date === "2020-5-6"); // true
 
 ## Examples
 
-**Express Server**
+### Express Server
+
 ```javascript
 const path = require("path");
 
