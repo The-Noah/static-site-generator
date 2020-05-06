@@ -2,7 +2,7 @@
   "name": "@the-noah/static-site-generator",
   "version": "1.0.2",
   "description": "",
-  "main": "cli.js",
+  "main": "app.js",
   "scripts": {
     "start": "node .",
     "test": "echo \"Error: no test specified\""

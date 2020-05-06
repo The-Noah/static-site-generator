@@ -7,12 +7,22 @@ const sass = require("node-sass");
 const htmlMinify = require("html-minifier").minify;
 const terser = require("terser");
 
+const RESET = "\x1b[0m";
+const log = {
+  info: (message) => console.log(`[\x1b[36mi${RESET}]`, message),
+  success: (message) => console.log(`[\x1b[32m+${RESET}]`, message),
+  error: (message) => console.error(`[\x1b[31m-${RESET}]`, message),
+  warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
+};
+
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
 let options = {
   srcDir: "src"
 };
 
 if(fs.existsSync(configPath)){
+  log.info(`using config file ${configPath}`);
+
   options = {
     ...options,
     ...JSON.parse(fs.readFileSync(configPath), "utf8")
@@ -22,14 +32,6 @@ if(fs.existsSync(configPath)){
 options.srcDir = path.join(process.cwd(), options.srcDir);
 const buildDir = path.join(process.cwd(), "build");
 const staticDir = path.join(options.srcDir, "static");
-
-const RESET = "\x1b[0m";
-const log = {
-  info: (message) => console.log(`[\x1b[36mi${RESET}]`, message),
-  success: (message) => console.log(`[\x1b[32m+${RESET}]`, message),
-  error: (message) => console.error(`[\x1b[31m-${RESET}]`, message),
-  warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
-};
 
 const fileHandlers = [];
 const addFileHandler = (extension, message, callback) => {
@@ -240,5 +242,6 @@ module.exports = {
   addFileHandler,
   addPageHandler,
   renderPage,
-  getData
+  getData,
+  options
 };
