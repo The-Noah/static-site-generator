@@ -22,6 +22,7 @@ Generates an optimized static website.
   - [Command-Line Interface (CLI)](#command-line-interface-cli)
   - [Library](#library)
     - [Importing](#importing)
+    - [`build()`](#build)
     - [`renderPage(pagePath, data, callback)`](#renderpagepagepath-data-callback)
     - [`getData()`](#getdata)
   - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
@@ -80,6 +81,17 @@ const staticSiteGenerator = require("@the-noah/static-site-generator");
 **TypeScript**
 ```typescript
 import * as staticSiteGenerator from "@the-noah/static-site-generator";
+```
+
+### `build()`
+
+Renders all pages in `options.srcDir` and saves them in `build`, as well as copies all files from `options.srcDir/static` to `build`.
+
+**Returns** `void`
+
+**Example**
+```TypeScript
+staticSiteGenerator.build();
 ```
 
 ### `renderPage(pagePath, data, callback)`
