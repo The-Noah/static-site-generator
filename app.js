@@ -17,6 +17,11 @@ const log = {
   warn: (message) => console.log(`[\x1b[33m!${RESET}]`, message)
 };
 
+const fileHandlers = [];
+const addFileHandler = (extension, message, callback) => {
+  fileHandlers.push({extension, message, callback});
+}
+
 const recurseDirectory = (dir, fileCallback, directoryCallback) => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
@@ -66,6 +71,7 @@ const copyDirectory = (source, target) => {
   });
 };
 
+let pages = [];
 const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
 
@@ -92,49 +98,15 @@ const build = () => {
     js: {}
   };
 
-  const pages = [];
-
+  pages = [];
   recurseDirectory(srcDir, (filePath) => {
     const file = path.parse(filePath);
 
-    switch(file.ext){
-      case ".json":
-        data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
-
-        log.success(`parsed ${file.base}`);
-        break;
-      case ".css":
-        data.css[file.name] = (sass.renderSync({
-          file: filePath,
-          outputStyle: "compressed"
-        })).css.toString();
-
-        log.success(`compressed ${file.base}`);
-        break;
-      case ".scss":
-        data.css[file.name] = (sass.renderSync({
-          file: filePath,
-          outputStyle: "compressed"
-        })).css.toString();
-
-        log.success(`compiled ${file.base}`);
-        break;
-      case ".js":
-        data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
-
-        log.success(`compressed ${file.base}`);
-        break;
-      case ".ejs":
-        const page = fs.readFileSync(filePath, "utf8");
-        if(!page.startsWith("<!DOCTYPE html>")){
-          log.info(`${file.base} doesn't appear to be a page - skipping`);
-          break;
-        }
-
-        pages.push(filePath);
-        break;
-      default:
-        break;
+    for(const fileHandler of fileHandlers){
+      if(file.ext === `.${fileHandler.extension}`){
+        fileHandler.callback(data, file, filePath);
+        log.success(`${fileHandler.message} ${file.base}`);
+      }
     }
   });
 
@@ -168,4 +140,39 @@ const build = () => {
   log.info("done!");
 };
 
-module.exports = build;
+addFileHandler("json", "parsed", (data, file, filePath) => {
+  data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+});
+
+addFileHandler("css", "compressed", (data, file, filePath) => {
+  data.css[file.name] = (sass.renderSync({
+    file: filePath,
+    outputStyle: "compressed"
+  })).css.toString();
+});
+
+addFileHandler("scss", "compiled", (data, file, filePath) => {
+  data.css[file.name] = (sass.renderSync({
+    file: filePath,
+    outputStyle: "compressed"
+  })).css.toString();
+});
+
+addFileHandler("js", "compressed", (data, file, filePath) => {
+  data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
+});
+
+addFileHandler("ejs", "read", (data, file, filePath) => {
+  const page = fs.readFileSync(filePath, "utf8");
+  if(!page.startsWith("<!DOCTYPE html>")){
+    log.info(`${file.base} doesn't appear to be a page - skipping`);
+    return;
+  }
+
+  pages.push(filePath);
+});
+
+module.exports = {
+  build,
+  addFileHandler
+};

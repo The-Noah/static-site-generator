@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 const staticSiteGenerator = require("./app");
 
 let watch = false;
@@ -6,14 +7,14 @@ if(process.argv[2] === "watch"){
   watch = true;
 }
 
-staticSiteGenerator();
+staticSiteGenerator.build();
 
 if(watch){
   log.info("watching files for changes...");
 
   const changed = (event, file) => {
     try{
-      staticSiteGenerator();
+      staticSiteGenerator.build();
     }catch(err){
       log.error(err);
     }
