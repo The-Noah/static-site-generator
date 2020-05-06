@@ -38,7 +38,7 @@ Generates an optimized static website.
 1. Compiles and optimizes SCSS files.
 2. Optimizes JavaScript.
 3. Embed data from JSON.
-4. HTML templated with EJS.
+4. HTML templates with ejs ore moe.
 5. Automatically copies static files.
 6. Can be used with a web server.
 
