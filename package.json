@@ -2,7 +2,7 @@
   "name": "@the-noah/static-site-generator",
   "version": "1.0.2",
   "description": "",
-  "main": "app.js",
+  "main": "cli.js",
   "scripts": {
     "start": "node .",
     "test": "echo \"Error: no test specified\""
@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/The-Noah/static-site-generator#readme",
   "bin": {
-    "static-site-generator": "app.js"
+    "static-site-generator": "cli.js"
   },
   "dependencies": {
     "ejs": "^3.1.2",

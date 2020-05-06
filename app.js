@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
@@ -10,11 +8,6 @@ const terser = require("terser");
 const srcDir = path.join(process.cwd(), "src");
 const buildDir = path.join(process.cwd(), "build");
 const staticDir = path.join(srcDir, "static");
-
-let watch = false;
-if(process.argv[2] === "watch"){
-  watch = true;
-}
 
 const RESET = "\x1b[0m";
 const log = {
@@ -175,21 +168,4 @@ const build = () => {
   log.info("done!");
 };
 
-build();
-
-if(watch){
-  log.info("watching files for changes...");
-
-  const changed = (event, file) => {
-    try{
-      build();
-    }catch(err){
-      log.error(err);
-    }
-  };
-
-  fs.watch(srcDir, changed);
-  recurseDirectory(srcDir, undefined, (dir) => {
-    fs.watch(dir, changed);
-  });
-}
+module.exports = build;
