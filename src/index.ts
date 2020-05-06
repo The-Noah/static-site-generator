@@ -45,6 +45,18 @@ const addPageHandler = (extension: string, callback: (data: any, filePath: strin
   pageHandlers.push({extension, callback});
 };
 
+const addPageFile = (extension: string) => {
+  addFileHandler(extension, "found page", (data, file, filePath) => {
+    const page = fs.readFileSync(filePath, "utf8");
+    if(!page.startsWith("<!DOCTYPE html>")){
+      log.info(`${file.base} doesn't appear to be a page - skipping`);
+      return;
+    }
+
+    pages.push(filePath);
+  });
+};
+
 const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void) => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
@@ -201,25 +213,8 @@ addFileHandler("js", "compressed", (data, file, filePath) => {
   data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
 });
 
-addFileHandler("ejs", "read", (data, file, filePath) => {
-  const page = fs.readFileSync(filePath, "utf8");
-  if(!page.startsWith("<!DOCTYPE html>")){
-    log.info(`${file.base} doesn't appear to be a page - skipping`);
-    return;
-  }
-
-  pages.push(filePath);
-});
-
-addFileHandler("moe", "read", (data, file, filePath) => {
-  const page = fs.readFileSync(filePath, "utf8");
-  if(!page.startsWith("<!DOCTYPE html>")){
-    log.info(`${file.base} doesn't appear to be a page - skipping`);
-    return;
-  }
-
-  pages.push(filePath);
-});
+addPageFile("ejs");
+addPageFile("moe");
 
 addPageHandler("ejs", (data, filePath, callback) => {
   ejs.renderFile(filePath, data, (err, html) => {
@@ -247,6 +242,7 @@ export {
   build,
   addFileHandler,
   addPageHandler,
+  addPageFile,
   renderPage,
   getData,
   options
