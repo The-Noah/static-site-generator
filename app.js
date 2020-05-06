@@ -1,6 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+
 const ejs = require("ejs");
+const moe = require("@toptensoftware/moe-js");
 const sass = require("node-sass");
 const htmlMinify = require("html-minifier").minify;
 const terser = require("terser");
@@ -20,7 +22,12 @@ const log = {
 const fileHandlers = [];
 const addFileHandler = (extension, message, callback) => {
   fileHandlers.push({extension, message, callback});
-}
+};
+
+const pageHandlers = [];
+const addPageHandler = (extension, callback) => {
+  pageHandlers.push({extension, callback});
+};
 
 const recurseDirectory = (dir, fileCallback, directoryCallback) => {
   fs.readdirSync(dir).forEach((file) => {
@@ -71,9 +78,52 @@ const copyDirectory = (source, target) => {
   });
 };
 
+const getData = () => {
+  const data = {
+    css: {},
+    js: {}
+  };
+
+  recurseDirectory(srcDir, (filePath) => {
+    const file = path.parse(filePath);
+
+    for(const fileHandler of fileHandlers){
+      if(file.ext === `.${fileHandler.extension}`){
+        fileHandler.callback(data, file, filePath);
+        log.success(`${fileHandler.message} ${file.base}`);
+      }
+    }
+  });
+
+  return data;
+};
+
+const renderPage = (pagePath, data, callback) => {
+  const file = path.parse(pagePath);
+
+  for(const pageHandler of pageHandlers){
+    if(file.ext === `.${pageHandler.extension}`){
+      pageHandler.callback(data, pagePath, (html) => {
+        callback(htmlMinify(html, {
+          html5: true,
+          // collapseInlineTagWhitespace: true,
+          minifyCSS: true,
+          removeComments: true,
+          removeRedundantAttributes: true,
+          removeTagWhitespace: true,
+          collapseWhitespace: true
+        }));
+
+        log.success(`rendered ${file.base}`);
+      });
+    }
+  }
+};
+
 let pages = [];
 const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
+  pages = [];
 
   if(!fs.existsSync(srcDir)){
     return log.error("no src in current directory");
@@ -93,22 +143,7 @@ const build = () => {
     copyDirectory(staticDir, buildDir);
   }
 
-  const data = {
-    css: {},
-    js: {}
-  };
-
-  pages = [];
-  recurseDirectory(srcDir, (filePath) => {
-    const file = path.parse(filePath);
-
-    for(const fileHandler of fileHandlers){
-      if(file.ext === `.${fileHandler.extension}`){
-        fileHandler.callback(data, file, filePath);
-        log.success(`${fileHandler.message} ${file.base}`);
-      }
-    }
-  });
+  const data = getData();
 
   for(const filePath of pages){
     const file = path.parse(filePath);
@@ -118,23 +153,9 @@ const build = () => {
       fs.mkdirSync(targetDir);
     }
 
-    ejs.renderFile(filePath, data, (err, html) => {
-      if(err){
-        return log.error(err);
-      }
-
-      fs.writeFileSync(path.join(targetDir, `${file.name}.html`), htmlMinify(html, {
-        html5: true,
-        // collapseInlineTagWhitespace: true,
-        minifyCSS: true,
-        removeComments: true,
-        removeRedundantAttributes: true,
-        removeTagWhitespace: true,
-        collapseWhitespace: true
-      }));
+    renderPage(filePath, data, (html) => {
+      fs.writeFileSync(path.join(targetDir, `${file.name}.html`), html);
     });
-
-    log.success(`rendered ${file.base}`);
   }
 
   log.info("done!");
@@ -172,7 +193,40 @@ addFileHandler("ejs", "read", (data, file, filePath) => {
   pages.push(filePath);
 });
 
+addFileHandler("moe", "read", (data, file, filePath) => {
+  const page = fs.readFileSync(filePath, "utf8");
+  if(!page.startsWith("<!DOCTYPE html>")){
+    log.info(`${file.base} doesn't appear to be a page - skipping`);
+    return;
+  }
+
+  pages.push(filePath);
+});
+
+addPageHandler("ejs", (data, filePath, callback) => {
+  ejs.renderFile(filePath, data, (err, html) => {
+    if(err){
+      return log.error(err);
+    }
+
+    callback(html);
+  });
+});
+
+addPageHandler("moe", (data, filePath, callback) => {
+  moe.compileFile(filePath, "UTF8", (err, template) => {
+    if(err){
+      return log.error(err);
+    }
+
+    callback(template(data));
+  });
+});
+
 module.exports = {
   build,
-  addFileHandler
+  addFileHandler,
+  addPageHandler,
+  renderPage,
+  getData
 };
