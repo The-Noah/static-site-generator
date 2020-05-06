@@ -25,6 +25,7 @@ Generates an optimized static website.
     - [`build()`](#build)
     - [`renderPage(pagePath, data, callback)`](#renderpagepagepath-data-callback)
     - [`getData()`](#getdata)
+  - [Page Templates](#page-templates)
   - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
     - [CSS & SASS](#css--sass)
     - [JavaScript](#javascript)
@@ -123,6 +124,13 @@ Returns all data from files found in `options.srcDir`.
 ```TypeScript
 console.log(staticSiteGenerator.getData());
 ```
+
+## Page Templates
+
+The following template engines are built-in.
+
+- [ejs](https://www.npmjs.com/package/ejs)
+- [moe](https://www.npmjs.com/package/@toptensoftware/moe-js)
 
 ## Understanding How Data is Collected and Used
 
