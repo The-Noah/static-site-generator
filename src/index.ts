@@ -241,7 +241,7 @@ addPageHandler("moe", (data, filePath, callback) => {
   });
 });
 
-export default {
+export {
   log,
   recurseDirectory,
   build,

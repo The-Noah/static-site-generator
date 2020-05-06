@@ -2,7 +2,7 @@
 
 import * as fs from "fs";
 
-import staticSiteGenerator from ".";
+import * as staticSiteGenerator from ".";
 
 let watch = false;
 if(process.argv[2] === "watch"){
