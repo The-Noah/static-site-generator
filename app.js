@@ -7,9 +7,21 @@ const sass = require("node-sass");
 const htmlMinify = require("html-minifier").minify;
 const terser = require("terser");
 
-const srcDir = path.join(process.cwd(), "src");
+const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
+let options = {
+  srcDir: "src"
+};
+
+if(fs.existsSync(configPath)){
+  options = {
+    ...options,
+    ...JSON.parse(fs.readFileSync(configPath), "utf8")
+  }
+}
+
+options.srcDir = path.join(process.cwd(), options.srcDir);
 const buildDir = path.join(process.cwd(), "build");
-const staticDir = path.join(srcDir, "static");
+const staticDir = path.join(options.srcDir, "static");
 
 const RESET = "\x1b[0m";
 const log = {
@@ -84,7 +96,7 @@ const getData = () => {
     js: {}
   };
 
-  recurseDirectory(srcDir, (filePath) => {
+  recurseDirectory(options.srcDir, (filePath) => {
     const file = path.parse(filePath);
 
     for(const fileHandler of fileHandlers){
@@ -125,11 +137,11 @@ const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
   pages = [];
 
-  if(!fs.existsSync(srcDir)){
+  if(!fs.existsSync(options.srcDir)){
     return log.error("no src in current directory");
   }
 
-  if(!fs.existsSync(path.join(srcDir, "index.ejs"))){
+  if(!fs.existsSync(path.join(options.srcDir, "index.ejs"))){
     log.warn("no index.ejs in src directory - this is NOT an error!");
   }
 
@@ -147,7 +159,7 @@ const build = () => {
 
   for(const filePath of pages){
     const file = path.parse(filePath);
-    const targetDir = path.parse(path.join(buildDir, filePath.split(srcDir)[1])).dir;
+    const targetDir = path.parse(path.join(buildDir, filePath.split(options.srcDir)[1])).dir;
 
     if(!fs.existsSync(targetDir)){
       fs.mkdirSync(targetDir);
