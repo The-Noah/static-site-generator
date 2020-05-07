@@ -92,7 +92,7 @@ Renders all pages in `options.srcDir` and saves them in `build`, as well as copi
 **Returns** `void`
 
 **Example**
-```TypeScript
+```javascript
 staticSiteGenerator.build();
 ```
 
@@ -109,8 +109,8 @@ Renders the page found at `pagePath` with the data `data` and calls `callback` w
 | callback | Function | Called when the page finishes rendering, with the paramater being the HTML as a string. |
 
 **Example**
-```TypeScript
-staticSiteGenerator.renderPage("index.ejs",  {message: "Hello, World"}, (html: string) => {
+```javascript
+staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World"}, (html) => {
   console.log(html);
 });
 ```
@@ -122,7 +122,7 @@ Returns all data from files found in `options.srcDir`.
 **Returns** `Object`
 
 **Example**
-```TypeScript
+```javascript
 console.log(staticSiteGenerator.getData());
 ```
 
