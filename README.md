@@ -63,7 +63,8 @@ The configuration file must be named `.static-site-generator.config.json` and mu
 
 | Property | Type   | Default | Description |
 | -------- | ------ | ------- | ----------- |
-| srcDir   | String | "src" | Path to look in for files. |
+| srcDir   | String | "src"   | Path to look in for files. |
+| logLevel | Number | 0       | 0 = all, 1 = no info, 2 = no sucess, 3 = no warning, 4 = no error - each level also inherits from the last |
 
 ## Command-Line Interface (CLI)
 

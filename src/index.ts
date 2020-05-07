@@ -9,26 +9,55 @@ import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
 const htmlMinify = htmlMinifer.minify;
 
-const RESET = "\x1b[0m";
-const log = {
-  info: (message: any) => console.log(`[\x1b[36mi${RESET}]`, message),
-  success: (message: any) => console.log(`[\x1b[32m+${RESET}]`, message),
-  error: (message: any) => console.error(`[\x1b[31m-${RESET}]`, message),
-  warn: (message: any) => console.log(`[\x1b[33m!${RESET}]`, message)
-};
-
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
 let options = {
-  srcDir: "src"
+  srcDir: "src",
+  logLevel: 0
 };
 
 if(fs.existsSync(configPath)){
-  log.info(`using config file ${configPath}`);
-
   options = {
     ...options,
     ...JSON.parse(fs.readFileSync(configPath, "utf8"))
   }
+}
+
+const RESET = "\x1b[0m";
+const log = {
+  info: (message: any) => {
+    if(options.logLevel > 0){
+      return;
+    }
+
+    console.log(`[\x1b[36mi${RESET}]`, message);
+  },
+  success: (message: any) => {
+    if(options.logLevel > 1){
+      return;
+    }
+
+    console.log(`[\x1b[32m+${RESET}]`, message);
+  },
+  error: (message: any) => {
+    if(options.logLevel > 2){
+      return;
+    }
+
+    console.error(`[\x1b[31m-${RESET}]`, message);
+  },
+  warn: (message: any) => {
+    if(options.logLevel > 3){
+      return;
+    }
+
+    console.log(`[\x1b[33m!${RESET}]`, message);
+  }
+};
+
+console.log(`log level: ${options.logLevel}`);
+
+if(fs.existsSync(configPath)){
+  log.info(`using config file ${configPath}`);
 }
 
 options.srcDir = path.join(process.cwd(), options.srcDir);
