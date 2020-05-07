@@ -138,10 +138,7 @@ const copyDirectory = (source: string, target: string) => {
 };
 
 const getData = () => {
-  const data = {
-    css: {},
-    js: {}
-  };
+  const data = {};
 
   recurseDirectory(options.srcDir, (filePath) => {
     const file = path.parse(filePath);
@@ -225,6 +222,10 @@ addFileHandler("json", "parsed", (data, file, filePath) => {
 });
 
 addFileHandler("css", "compressed", (data, file, filePath) => {
+  if(!data.css){
+    data.css = {};
+  }
+
   data.css[file.name] = (sass.renderSync({
     file: filePath,
     outputStyle: "compressed"
@@ -232,6 +233,10 @@ addFileHandler("css", "compressed", (data, file, filePath) => {
 });
 
 addFileHandler("scss", "compiled", (data, file, filePath) => {
+  if(!data.css){
+    data.css = {};
+  }
+
   data.css[file.name] = (sass.renderSync({
     file: filePath,
     outputStyle: "compressed"
@@ -239,6 +244,10 @@ addFileHandler("scss", "compiled", (data, file, filePath) => {
 });
 
 addFileHandler("js", "compressed", (data, file, filePath) => {
+  if(!data.js){
+    data.js = {};
+  }
+
   data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
 });
 
