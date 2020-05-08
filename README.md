@@ -29,7 +29,7 @@ Generates an optimized static website.
   - [Page Templates](#page-templates)
   - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
     - [CSS & SASS](#css--sass)
-    - [JavaScript](#javascript)
+    - [JavaScript & TypeScript](#javascript--typescript)
     - [JSON](#json)
   - [Examples](#examples)
     - [Express Server](#express-server)
@@ -38,10 +38,11 @@ Generates an optimized static website.
 
 1. Compiles and optimizes SCSS files.
 2. Optimizes JavaScript.
-3. Embed data from JSON.
-4. HTML templates with ejs ore moe.
-5. Automatically copies static files.
-6. Can be used with a web server.
+3. Supports TypeScript.
+4. Embed data from JSON.
+5. HTML templates with ejs ore moe.
+6. Automatically copies static files.
+7. Can be used with a web server.
 
 # Documentation
 
@@ -159,13 +160,15 @@ h1{
 console.log(data.css.main === "h1{color:red}") // true
 ```
 
-### JavaScript
+### JavaScript & TypeScript
 
-`.js` files will be compressed and available as a string under their filename in the `js` object.
+`.js` and compiled `.ts` files will be compressed and available as a string under their filename in the `js` object.
 
 **Example**
 
-`app.js` will be compressed and available under `js.app`.
+`app.js` will be compressed then available under `js.app`.
+
+`script.ts` will be compiled and compressed then available under `js.script`.
 
 ```javascript
 // app.js
