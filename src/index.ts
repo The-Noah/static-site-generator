@@ -7,6 +7,9 @@ const moe = require("@toptensoftware/moe-js");
 import * as sass from "node-sass";
 import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
+import typescript from "typescript";
+import {types} from "util";
+
 const htmlMinify = htmlMinifer.minify;
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
@@ -249,6 +252,14 @@ addFileHandler("js", "compressed", (data, file, filePath) => {
   }
 
   data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
+});
+
+addFileHandler("ts", "compiled", (data, file, filePath) => {
+  if(!data.js){
+    data.js = {};
+  }
+
+  data.js[file.name] = terser.minify(typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {}).outputText).code;
 });
 
 addPageFile("ejs");
