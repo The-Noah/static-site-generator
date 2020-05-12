@@ -28,6 +28,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
+    "watch": "tsc -w",
     "test": "echo \"Error: no test specified\"",
     "prepublish": "npm run build"
   },
@@ -48,6 +49,8 @@
     "@toptensoftware/moe-js": "^0.4.0",
     "ejs": "^3.1.2",
     "html-minifier": "^4.0.0",
+    "markdown-yaml-metadata-parser": "^2.0.5",
+    "marked": "^1.0.0",
     "node-sass": "^4.14.0",
     "terser": "^4.6.13",
     "typescript": "^3.8.3"
@@ -55,6 +58,7 @@
   "devDependencies": {
     "@types/ejs": "^3.0.3",
     "@types/html-minifier": "^3.5.3",
+    "@types/marked": "^0.7.4",
     "@types/node": "^13.13.5",
     "@types/node-sass": "^4.11.0",
     "@types/terser": "^3.12.0"

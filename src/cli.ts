@@ -45,7 +45,7 @@ switch(process.argv[2]){
       }else if(filePath.endsWith(".html")){
         const filePaths = {
           ejs: `${filePath.substring(0, filePath.length - 4)}ejs`,
-          moe: `${filePath.substring(0, filePath.length - 4)}moe`,
+          moe: `${filePath.substring(0, filePath.length - 4)}moe`
         };
 
         const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";

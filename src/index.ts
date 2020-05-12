@@ -8,14 +8,20 @@ import * as sass from "node-sass";
 import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
 import typescript from "typescript";
-import {types} from "util";
+import marked from "marked";
+const markdownParser = require("markdown-yaml-metadata-parser");
 
 const htmlMinify = htmlMinifer.minify;
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
-let options = {
+let options: {
+  srcDir: string,
+  logLevel: number,
+  markdownTemplate: string | false
+} = {
   srcDir: "src",
-  logLevel: 0
+  logLevel: 0,
+  markdownTemplate: false
 };
 
 if(fs.existsSync(configPath)){
@@ -85,7 +91,10 @@ const addPageFile = (extension: string) => {
       return;
     }
 
-    pages.push(filePath);
+    pages.push({
+      filePath,
+      data: {}
+    });
   });
 };
 
@@ -179,7 +188,11 @@ const renderPage = (pagePath: string, data: Object, callback: (html: string) => 
   }
 };
 
-let pages: string[] = [];
+let pages: {
+  filePath: string,
+  data: Object,
+  targetName?: string
+}[] = [];
 const build = () => {
   log.info(`building ${path.parse(process.cwd()).base}...`);
   pages = [];
@@ -204,16 +217,19 @@ const build = () => {
 
   const data = getData();
 
-  for(const filePath of pages){
-    const file = path.parse(filePath);
-    const targetDir = path.parse(path.join(buildDir, filePath.split(options.srcDir)[1])).dir;
+  for(const page of pages){
+    const file = path.parse(page.filePath);
+    const targetDir = path.parse(path.join(buildDir, page.filePath.split(options.srcDir)[1])).dir;
 
     if(!fs.existsSync(targetDir)){
       fs.mkdirSync(targetDir);
     }
 
-    renderPage(filePath, data, (html) => {
-      fs.writeFileSync(path.join(targetDir, `${file.name}.html`), html);
+    renderPage(page.filePath, {
+      ...data,
+      ...page.data
+    }, (html) => {
+      fs.writeFileSync(path.join(targetDir, `${page.targetName ?? file.name}.html`), html);
     });
   }
 
@@ -260,6 +276,30 @@ addFileHandler("ts", "compiled", (data, file, filePath) => {
   }
 
   data.js[file.name] = terser.minify(typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {}).outputText).code;
+});
+
+addFileHandler("md", "parsed", (data, file, filePath) => {
+  if(!data.markdown){
+    data.markdown = {};
+  }
+
+  if(!options.markdownTemplate){
+    log.warn("no markdown template for markdown files - this is NOT an error!");
+  }
+
+  const markdown = markdownParser(fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n"));
+  const markdownData = {
+    metadata: markdown.metadata,
+    content: marked(markdown.content)
+  };
+
+  data.markdown[file.name] = markdownData;
+
+  pages.push({
+    filePath: path.join(options.srcDir, `${options.markdownTemplate}`),
+    data: markdownData,
+    targetName: file.name
+  });
 });
 
 addPageFile("ejs");
