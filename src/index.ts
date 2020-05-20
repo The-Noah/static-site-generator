@@ -149,7 +149,7 @@ const copyDirectory = (source: string, target: string) => {
   });
 };
 
-const getData = () => {
+const getData = (): any => {
   const data = {};
 
   recurseDirectory(options.srcDir, (filePath) => {

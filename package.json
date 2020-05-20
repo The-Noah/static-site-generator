@@ -29,7 +29,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "test": "echo \"Error: no test specified\"",
+    "pretest": "npm run build",
+    "test": "cd test && node test.js",
     "prepublish": "npm run build"
   },
   "repository": {

@@ -112,7 +112,7 @@ Renders the page found at `pagePath` with the data `data` and calls `callback` w
 
 **Example**
 ```javascript
-staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World"}, (html) => {
+staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World!"}, (html) => {
   console.log(html);
 });
 ```
@@ -157,7 +157,7 @@ h1{
 ```
 
 ```javascript
-console.log(data.css.main === "h1{color:red}") // true
+console.log(data.css.main === "h1{color:red}"); // true
 ```
 
 ### JavaScript & TypeScript
@@ -176,7 +176,7 @@ alert("Hello, World!");
 ```
 
 ```javascript
-console.log(data.js.app === "alert(\"Hello, World!\");") // true
+console.log(data.js.app === "alert(\"Hello, World!\");"); // true
 ```
 
 ### JSON
@@ -198,7 +198,7 @@ console.log(data.js.app === "alert(\"Hello, World!\");") // true
 ```
 
 ```javascript
-console.log(blog[0].date === "2020-5-6"); // true
+console.log(data.blog[0].date === "2020-5-6"); // true
 ```
 
 ## Examples
