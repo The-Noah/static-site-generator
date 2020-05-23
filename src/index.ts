@@ -17,11 +17,13 @@ const configPath = path.join(process.cwd(), ".static-site-generator.config.json"
 let options: {
   srcDir: string,
   logLevel: number,
-  markdownTemplate: string | false
+  markdownTemplate: string | false,
+  compressionLevel: number
 } = {
   srcDir: "src",
   logLevel: 0,
-  markdownTemplate: false
+  markdownTemplate: false,
+  compressionLevel: 2
 };
 
 if(fs.existsSync(configPath)){
@@ -64,6 +66,7 @@ const log = {
 };
 
 console.log(`log level: ${options.logLevel}`);
+log.info(`compression level: ${options.compressionLevel}`);
 
 if(fs.existsSync(configPath)){
   log.info(`using config file ${configPath}`);
@@ -174,12 +177,11 @@ const renderPage = (pagePath: string, data: Object, callback: (html: string) => 
       pageHandler.callback(data, pagePath, (html: string) => {
         callback(htmlMinify(html, {
           html5: true,
-          // collapseInlineTagWhitespace: true,
-          minifyCSS: true,
-          removeComments: true,
-          removeRedundantAttributes: true,
-          removeTagWhitespace: true,
-          collapseWhitespace: true
+          collapseInlineTagWhitespace: options.compressionLevel >= 3,
+          removeComments: options.compressionLevel >= 1,
+          removeRedundantAttributes: options.compressionLevel >= 1,
+          removeTagWhitespace: options.compressionLevel >= 3,
+          collapseWhitespace: options.compressionLevel >= 2
         }));
 
         log.success(`rendered ${file.base}`);
@@ -247,7 +249,7 @@ addFileHandler("css", "compressed", (data, file, filePath) => {
 
   data.css[file.name] = (sass.renderSync({
     file: filePath,
-    outputStyle: "compressed"
+    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
   })).css.toString();
 });
 
@@ -258,7 +260,7 @@ addFileHandler("scss", "compiled", (data, file, filePath) => {
 
   data.css[file.name] = (sass.renderSync({
     file: filePath,
-    outputStyle: "compressed"
+    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
   })).css.toString();
 });
 
@@ -266,8 +268,9 @@ addFileHandler("js", "compressed", (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
+  const code = fs.readFileSync(filePath, "utf8");
 
-  data.js[file.name] = terser.minify(fs.readFileSync(filePath, "utf8")).code;
+  data.js[file.name] = options.compressionLevel >= 1 ? terser.minify(code).code : code;
 });
 
 addFileHandler("ts", "compiled", (data, file, filePath) => {
