@@ -58,7 +58,7 @@ switch(process.argv[2]){
       }
 
       const filePath = path.join(staticSiteGenerator.options.srcDir, url);
-      const staticPath = path.join(staticSiteGenerator.options.srcDir, "static", url);
+      const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
 
       if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
         staticSiteGenerator.log.success(`serving static file ${url}`);

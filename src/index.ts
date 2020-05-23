@@ -17,12 +17,14 @@ const configPath = path.join(process.cwd(), ".static-site-generator.config.json"
 let options: {
   srcDir: string,
   buildDir: string,
+  staticDir: string,
   logLevel: number,
   markdownTemplate: string | false,
   compressionLevel: number
 } = {
   srcDir: "src",
   buildDir: "build",
+  staticDir: "static",
   logLevel: 0,
   markdownTemplate: false,
   compressionLevel: 2
@@ -76,7 +78,7 @@ if(fs.existsSync(configPath)){
 
 options.srcDir = path.join(process.cwd(), options.srcDir);
 options.buildDir = path.join(process.cwd(), options.buildDir);
-const staticDir = path.join(options.srcDir, "static");
+options.staticDir = path.join(options.srcDir, options.staticDir);
 
 const fileHandlers: any[] = [];
 const addFileHandler = (extension: string, message: string, callback: (data: any, file: any, filePath: string) => void) => {
@@ -214,9 +216,9 @@ const build = () => {
   }
   fs.mkdirSync(options.buildDir);
 
-  if(fs.existsSync(staticDir)){
+  if(fs.existsSync(options.staticDir)){
     log.info("copying static files...");
-    copyDirectory(staticDir, options.buildDir);
+    copyDirectory(options.staticDir, options.buildDir);
   }
 
   const data = getData();
