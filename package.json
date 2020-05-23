@@ -48,6 +48,7 @@
   },
   "dependencies": {
     "@toptensoftware/moe-js": "^0.4.0",
+    "commander": "^5.1.0",
     "ejs": "^3.1.2",
     "html-minifier": "^4.0.0",
     "markdown-yaml-metadata-parser": "^2.0.5",
@@ -58,6 +59,7 @@
     "ws": "^7.3.0"
   },
   "devDependencies": {
+    "@types/commander": "^2.12.2",
     "@types/ejs": "^3.0.3",
     "@types/html-minifier": "^3.5.3",
     "@types/marked": "^0.7.4",

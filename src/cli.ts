@@ -4,14 +4,38 @@ import * as fs from "fs";
 import * as path from "path";
 import {createServer} from "http";
 import WebSocket from "ws";
+import {program} from "commander";
+const {version} = require("../package.json");
 
 import * as staticSiteGenerator from ".";
 
 const PORT = 3000;
 const WS_PORT = 3001;
 
-if(process.argv[3]){
-  staticSiteGenerator.options.srcDir = path.resolve(process.argv[3]);
+program.version(version, "-v, --version");
+program
+  .option("--src-dir <path>", "source directory for files")
+  .option("-d, --build-dir <path>", "build directory for files")
+  .option("--static-dir <path>", "directory for static files")
+  .option("--log-level <level>", "how much information to log", parseInt)
+  .option("--compression-level <level>", "how much to compress files", parseInt)
+  .parse(process.argv);
+
+if(program.srcDir){
+  staticSiteGenerator.options.staticDir = path.join(path.resolve(program.srcDir), staticSiteGenerator.options.staticDir.split(staticSiteGenerator.options.srcDir)[1]);
+  staticSiteGenerator.options.srcDir = path.resolve(program.srcDir);
+}
+if(program.buildDir){
+  staticSiteGenerator.options.buildDir = path.resolve(program.buildDir);
+}
+if(program.staticDir){
+  staticSiteGenerator.options.staticDir = path.join(staticSiteGenerator.options.srcDir, path.resolve(program.staticDir));
+}
+if(program.logLevel !== undefined && program.logLevel !== NaN){
+  staticSiteGenerator.options.logLevel = program.logLevel;
+}
+if(program.compressionLevel !== undefined && program.compressionLevel !== NaN){
+  staticSiteGenerator.options.compressionLevel = program.compressionLevel;
 }
 
 switch(process.argv[2]){
