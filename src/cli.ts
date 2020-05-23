@@ -10,6 +10,10 @@ import * as staticSiteGenerator from ".";
 const PORT = 3000;
 const WS_PORT = 3001;
 
+if(process.argv[3]){
+  staticSiteGenerator.options.srcDir = path.resolve(process.argv[3]);
+}
+
 switch(process.argv[2]){
   case "watch": {
     staticSiteGenerator.build();
