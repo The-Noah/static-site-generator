@@ -62,10 +62,13 @@ Add `static-site-generator` as a script in your `package.json` to build your web
 
 The configuration file must be named `.static-site-generator.config.json` and must be in the root of your project. Configuration is available in `options`.
 
-| Property | Type   | Default | Description |
-| -------- | ------ | ------- | ----------- |
-| srcDir   | String | "src"   | Path to look in for files. |
-| logLevel | Number | 0       | 0 = all, 1 = no info, 2 = no sucess, 3 = no warning, 4 = no error - each level also inherits from the last |
+| Property  | Type   | Default  | Description |
+| --------- | ------ | -------- | ----------- |
+| srcDir    | String | "src"    | Path to look in for files. |
+| buildDir  | String | "build"  | Path to save final files to. |
+| staticDir | String | "static" | Path in `srcDir` to look for static files. |
+| logLevel  | Number | 0        | `0` = all, `1` = no info, `2` = no sucess, `3` = no warning, `4` = no error - each level also inherits from the last |
+| compressionLevel | Number | 2 | How much to compress files - `0` = none, `3` = max |
 
 ## Command-Line Interface (CLI)
 
@@ -89,7 +92,7 @@ import * as staticSiteGenerator from "@the-noah/static-site-generator";
 
 ### `build()`
 
-Renders all pages in `options.srcDir` and saves them in `build`, as well as copies all files from `options.srcDir/static` to `build`.
+Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`.
 
 **Returns** `void`
 
