@@ -16,11 +16,13 @@ const htmlMinify = htmlMinifer.minify;
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
 let options: {
   srcDir: string,
+  buildDir: string,
   logLevel: number,
   markdownTemplate: string | false,
   compressionLevel: number
 } = {
   srcDir: "src",
+  buildDir: "build",
   logLevel: 0,
   markdownTemplate: false,
   compressionLevel: 2
@@ -73,7 +75,7 @@ if(fs.existsSync(configPath)){
 }
 
 options.srcDir = path.join(process.cwd(), options.srcDir);
-const buildDir = path.join(process.cwd(), "build");
+options.buildDir = path.join(process.cwd(), options.buildDir);
 const staticDir = path.join(options.srcDir, "static");
 
 const fileHandlers: any[] = [];
@@ -196,7 +198,7 @@ let pages: {
   targetName?: string
 }[] = [];
 const build = () => {
-  log.info(`building ${path.parse(process.cwd()).base}...`);
+  log.info(`building ${path.parse(process.cwd()).base} to ${path.parse(options.buildDir).base}...`);
   pages = [];
 
   if(!fs.existsSync(options.srcDir)){
@@ -207,21 +209,21 @@ const build = () => {
     log.warn("no index.ejs in src directory - this is NOT an error!");
   }
 
-  if(fs.existsSync(buildDir)){
-    deleteDirectory(buildDir);
+  if(fs.existsSync(options.buildDir)){
+    deleteDirectory(options.buildDir);
   }
-  fs.mkdirSync(buildDir);
+  fs.mkdirSync(options.buildDir);
 
   if(fs.existsSync(staticDir)){
     log.info("copying static files...");
-    copyDirectory(staticDir, buildDir);
+    copyDirectory(staticDir, options.buildDir);
   }
 
   const data = getData();
 
   for(const page of pages){
     const file = path.parse(page.filePath);
-    const targetDir = path.parse(path.join(buildDir, page.filePath.split(options.srcDir)[1])).dir;
+    const targetDir = path.parse(path.join(options.buildDir, page.filePath.split(options.srcDir)[1])).dir;
 
     if(!fs.existsSync(targetDir)){
       fs.mkdirSync(targetDir);
