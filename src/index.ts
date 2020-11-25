@@ -268,21 +268,21 @@ addFileHandler("scss", "compiled", (data, file, filePath) => {
   })).css.toString();
 });
 
-addFileHandler("js", "compressed", (data, file, filePath) => {
+addFileHandler("js", "compressed", async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
   const code = fs.readFileSync(filePath, "utf8");
 
-  data.js[file.name] = options.compressionLevel >= 1 ? terser.minify(code).code : code;
+  data.js[file.name] = options.compressionLevel >= 1 ? (await terser.minify(code)).code : code;
 });
 
-addFileHandler("ts", "compiled", (data, file, filePath) => {
+addFileHandler("ts", "compiled", async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
 
-  data.js[file.name] = terser.minify(typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {}).outputText).code;
+  data.js[file.name] = (await terser.minify(typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {}).outputText)).code;
 });
 
 addFileHandler("md", "parsed", (data, file, filePath) => {
