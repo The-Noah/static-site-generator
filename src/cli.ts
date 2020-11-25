@@ -19,6 +19,7 @@ program
   .option("--static-dir <path>", "directory for static files")
   .option("--log-level <level>", "how much information to log", parseInt)
   .option("--compression-level <level>", "how much to compress files", parseInt)
+  .option("--single-page", "redirect 404 to index.html")
   .parse(process.argv);
 
 if(program.srcDir){
@@ -75,50 +76,59 @@ switch(process.argv[2]){
       fs.watch(dir, changed);
     });
 
-    createServer((req, res) => {
+    const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve, reject) => {
+      const filePath = path.join(staticSiteGenerator.options.srcDir, url);
+      const filePaths = {
+        ejs: `${filePath.substring(0, filePath.length - 4)}ejs`,
+        moe: `${filePath.substring(0, filePath.length - 4)}moe`
+      };
+
+      const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
+      if(file === "404"){
+        staticSiteGenerator.log.warn("404 page not found");
+        resolve("404 not found");
+      }
+
+      staticSiteGenerator.renderPage(file, staticSiteGenerator.getData(), (html) => {
+        let normalDoc = false;
+        if(html.endsWith("</body></html>")){
+          normalDoc = true;
+          html = html.substring(0, html.length - "</body></html>".length);
+        }
+
+        html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
+
+        if(normalDoc){
+          html += "</body></html>";
+        }
+
+        resolve(html);
+      });
+    });
+
+    createServer(async (req, res) => {
       let url = `${req.url}`.slice(1);
       if(`${req.url}`.endsWith("/")){
         url += "index.html";
       }
 
-      const filePath = path.join(staticSiteGenerator.options.srcDir, url);
       const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
 
       if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
         staticSiteGenerator.log.success(`serving static file ${url}`);
         res.write(fs.readFileSync(staticPath));
         res.end();
-      }else if(filePath.endsWith(".html")){
-        const filePaths = {
-          ejs: `${filePath.substring(0, filePath.length - 4)}ejs`,
-          moe: `${filePath.substring(0, filePath.length - 4)}moe`
-        };
-
-        const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
-        if(file === "404"){
+      }else if(url.endsWith(".html")){
+        res.write(await renderHtmlPage(url));
+        res.end();
+      }else{
+        if(program.singlePage){
+          staticSiteGenerator.log.info("serving 404 as index.html due to --single-page flag");
+          res.write(await renderHtmlPage("index.html"));
+        }else{
           res.write("404 not found");
-          res.end();
-          return;
         }
 
-        staticSiteGenerator.renderPage(file, staticSiteGenerator.getData(), (html) => {
-          let normalDoc = false;
-          if(html.endsWith("</body></html>")){
-            normalDoc = true;
-            html = html.substring(0, html.length - "</body></html>".length);
-          }
-
-          html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
-
-          if(normalDoc){
-            html += "</body></html>";
-          }
-
-          res.write(html);
-          res.end();
-        });
-      }else{
-        res.write("404 not found");
         res.end();
       }
     }).listen(PORT, () => {
