@@ -39,10 +39,10 @@ if(program.buildDir){
 if(program.staticDir){
   staticSiteGenerator.options.staticDir = path.join(staticSiteGenerator.options.srcDir, path.resolve(program.staticDir));
 }
-if(program.logLevel !== undefined && program.logLevel !== NaN){
+if(program.logLevel !== undefined && !isNaN(program.logLevel)){
   staticSiteGenerator.options.logLevel = program.logLevel;
 }
-if(program.compressionLevel !== undefined && program.compressionLevel !== NaN){
+if(program.compressionLevel !== undefined && !isNaN(program.compressionLevel)){
   staticSiteGenerator.options.compressionLevel = program.compressionLevel;
 }
 
@@ -56,121 +56,121 @@ staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
  * @returns dev - Builds staticSiteGenerator and creates dev enviornment
  */
 switch(process.argv[2]){
-  case "watch": {
-    staticSiteGenerator.build();
-    staticSiteGenerator.logger.info("watching files for changes...");
+case "watch": {
+  staticSiteGenerator.build();
+  staticSiteGenerator.logger.info("watching files for changes...");
 
-    const changed = (event: any, file: string) => {
-      try{
-        staticSiteGenerator.build();
-      }catch(err){
-        staticSiteGenerator.logger.error(err);
-      }
-    };
+  const changed = (event: any, file: string) => {
+    try{
+      staticSiteGenerator.build();
+    }catch(err){
+      staticSiteGenerator.logger.error(err);
+    }
+  };
 
-    fs.watch(staticSiteGenerator.options.srcDir, changed);
+  fs.watch(staticSiteGenerator.options.srcDir, changed);
 
-    staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
-      fs.watch(dir, changed);
+  staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
+    fs.watch(dir, changed);
+  });
+} break;
+case "dev": {
+  staticSiteGenerator.logger.info("starting dev server...");
+
+  const wss = new WebSocket.Server({port: WS_PORT});
+  wss.on("connection", (ws) => {
+    staticSiteGenerator.logger.success("new WS connection");
+  });
+
+  const changed = (event: any, file: string) => {
+    wss.clients.forEach((client) => {
+      client.send("reload");
     });
-  } break;
-  case "dev": {
-    staticSiteGenerator.logger.info("starting dev server...");
+  };
 
-    const wss = new WebSocket.Server({port: WS_PORT});
-    wss.on("connection", (ws) => {
-      staticSiteGenerator.logger.success("new WS connection");
-    });
-
-    const changed = (event: any, file: string) => {
-      wss.clients.forEach((client) => {
-        client.send("reload");
-      });
-    };
-
-    fs.watch(staticSiteGenerator.options.srcDir, changed);
-    staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
-      fs.watch(dir, changed);
-    });
-    /**
+  fs.watch(staticSiteGenerator.options.srcDir, changed);
+  staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
+    fs.watch(dir, changed);
+  });
+  /**
      * Renders a HTML Page
      * @param url - URL of HTML page to render
      * @returns resolve - 404 Page not found
      * @returns resolve - html content
      */
-    const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve, reject) => {
-      const filePath = path.join(staticSiteGenerator.options.srcDir, url);
+  const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve, reject) => {
+    const filePath = path.join(staticSiteGenerator.options.srcDir, url);
 
-      const filePaths = {
-        ejs: `${filePath.substring(0, filePath.length - 4)}ejs`,
-        moe: `${filePath.substring(0, filePath.length - 4)}moe`
-      };
+    const filePaths = {
+      ejs: `${filePath.substring(0, filePath.length - 4)}ejs`,
+      moe: `${filePath.substring(0, filePath.length - 4)}moe`
+    };
 
-      const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
-      if(file === "404"){
-        staticSiteGenerator.logger.warn("404 page not found");
+    const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
+    if(file === "404"){
+      staticSiteGenerator.logger.warn("404 page not found");
 
-        resolve("404 not found");
+      resolve("404 not found");
+    }
+
+    staticSiteGenerator.renderPage(file, staticSiteGenerator.getData(), (html) => {
+      let normalDoc = false;
+      if(html.endsWith("</body></html>")){
+        normalDoc = true;
+
+        html = html.substring(0, html.length - "</body></html>".length);
       }
 
-      staticSiteGenerator.renderPage(file, staticSiteGenerator.getData(), (html) => {
-        let normalDoc = false;
-        if(html.endsWith("</body></html>")){
-          normalDoc = true;
+      html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
 
-          html = html.substring(0, html.length - "</body></html>".length);
-        }
+      if(normalDoc){
+        html += "</body></html>";
+      }
 
-        html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
-
-        if(normalDoc){
-          html += "</body></html>";
-        }
-
-        resolve(html);
-      });
+      resolve(html);
     });
+  });
     /**
      * Creates a HTTP server
      */
-    createServer(async (req, res) => {
-      let url = `${req.url}`.slice(1);
-      if(`${req.url}`.endsWith("/")){
-        url += "index.html";
-      }
+  createServer(async (req, res) => {
+    let url = `${req.url}`.slice(1);
+    if(`${req.url}`.endsWith("/")){
+      url += "index.html";
+    }
 
-      const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
+    const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
 
-      if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
-        staticSiteGenerator.logger.success(`serving static file ${url}`);
+    if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
+      staticSiteGenerator.logger.success(`serving static file ${url}`);
 
-        res.write(fs.readFileSync(staticPath));
+      res.write(fs.readFileSync(staticPath));
 
-        res.end();
-      }else if(url.endsWith(".html")){
-        res.write(await renderHtmlPage(url));
+      res.end();
+    }else if(url.endsWith(".html")){
+      res.write(await renderHtmlPage(url));
 
-        res.end();
+      res.end();
+    }else{
+      if(program.singlePage){
+        staticSiteGenerator.logger.info("serving 404 as index.html due to --single-page flag");
+
+        res.write(await renderHtmlPage("index.html"));
       }else{
-        if(program.singlePage){
-          staticSiteGenerator.logger.info("serving 404 as index.html due to --single-page flag");
-
-          res.write(await renderHtmlPage("index.html"));
-        }else{
-          res.write("404 not found");
-        }
-
-        res.end();
+        res.write("404 not found");
       }
-    }).listen(PORT, () => {
-      staticSiteGenerator.logger.success(`dev server running at http://localhost:${PORT}`);
-    });
-  }
-  case "build": {
-    staticSiteGenerator.build();
-    break;
-  } 
-  default:
+
+      res.end();
+    }
+  }).listen(PORT, () => {
+    staticSiteGenerator.logger.success(`dev server running at http://localhost:${PORT}`);
+  });
+} break;
+case "build": {
+  staticSiteGenerator.build();
+  break;
+}
+default:
 // Setup command-line arguments
   program.version(version, "-v, --version");
   program
@@ -181,5 +181,5 @@ switch(process.argv[2]){
     .option("--compression-level <level>", "how much to compress files", parseInt)
     .option("--single-page", "redirect 404 to index.html")
     .parse(process.argv);
-    break;
+  break;
 }

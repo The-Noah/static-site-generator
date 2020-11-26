@@ -1,7 +1,7 @@
 // main imports
 import * as fs from "fs";
 import * as path from "path";
-
+import * as yaml from "js-yaml";
 // template engines
 import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
@@ -17,23 +17,24 @@ import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
 
 import {ILogger, default as defaultLogger} from "./log";
-let logger: ILogger = defaultLogger;
+const logger: ILogger = defaultLogger;
 
 const htmlMinify = htmlMinifer.minify;
 
 // interfaces
 interface IFileHandler{
-  extension: string,
-  message: string,
-  callback: (data: any, file: any, filePath: string) => void,
+  extension: string;
+  message: string;
+  callback: (data: any, file: any, filePath: string) => void;
 }
 
 interface IPageHandler{
-  extension: string,
-  callback: (data: any, filePath: string, callback: (html: string) => void) => void
+  extension: string;
+  callback: (data: any, filePath: string, callback: (html: string) => void) => void;
 }
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
+const yamlConfigPath = path.join(process.cwd(), ".static-site-generator.config.yaml");
 /**
  * Create options Object with built-in defaults
  * @param srcDir - Path to look in for files.
@@ -43,12 +44,12 @@ const configPath = path.join(process.cwd(), ".static-site-generator.config.json"
  * @param compressionLevel - How much to compress files - 0 = none, 3 = max
  */
 let options: {
-  srcDir: string,
-  buildDir: string,
-  staticDir: string,
-  logLevel: number,
-  markdownTemplate: string | false,
-  compressionLevel: number
+  srcDir: string;
+  buildDir: string;
+  staticDir: string;
+  logLevel: number;
+  markdownTemplate: string | false;
+  compressionLevel: number;
 } = {
   srcDir: "src",
   buildDir: "build",
@@ -60,11 +61,25 @@ let options: {
 
 // Import options if found
 if(fs.existsSync(configPath)){
-  options = {
-    ...options,
-    ...JSON.parse(fs.readFileSync(configPath, "utf8"))
+  try {
+    options = {
+      ...options,
+      ...JSON.parse(fs.readFileSync(configPath, "utf8"))
+    };
+    logger.info(`using config file ${configPath}`);
+  } catch (e) {
+   logger.error(`JSON Error: ${e}`) 
   }
-  logger.info(`using config file ${configPath}`);
+} else if(fs.existsSync(yamlConfigPath)) {
+  try {
+    options = {
+      ...options,
+      ...yaml.load(fs.readFileSync(yamlConfigPath, "utf8"), { json: true})
+    };
+    logger.info(`using config file ${yamlConfigPath}`);
+  } catch (e) {
+    logger.error(`YAML Error: ${e}`);
+  }
 }
 
 logger.info(`log level: ${options.logLevel}`);
@@ -83,8 +98,9 @@ const fileHandlers: any[] = [];
 /**
  * Method to add a new fileHandler
  * @param fileHandler - File Handler Options
+ * @returns {void}
  */
-const addFileHandler = (fileHandler: IFileHandler) => {
+const addFileHandler = (fileHandler: IFileHandler): void => {
   fileHandlers.push(fileHandler);
 };
 
@@ -92,15 +108,17 @@ const pageHandlers: any[] = [];
 /**
  * Method to add a new pageHandler
  * @param pageHandler - Page Handler Options
+ * @returns {void}
  */
-const addPageHandler = (pageHandler: IPageHandler) => {
+const addPageHandler = (pageHandler: IPageHandler): void => {
   pageHandlers.push(pageHandler);
 };
 /**
  * Method to add a new PageFile
  * @param extension - Extension of File
+ * @returns {void}
  */
-const addPageFile = (extension: string) => {
+const addPageFile = (extension: string): void => {
   addFileHandler({extension, message: "found page", callback: (data, file, filePath) => {
     const page = fs.readFileSync(filePath, "utf8");
 
@@ -113,7 +131,7 @@ const addPageFile = (extension: string) => {
       filePath,
       data: {}
     });
-    }
+  }
   });
 };
 /**
@@ -121,8 +139,9 @@ const addPageFile = (extension: string) => {
  * @param dir - Path of Directory to recurse
  * @param fileCallback - File Path
  * @param directoryCallback - Directory Path
+ * @returns {void}
  */
-const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void) => {
+const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void): void => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
 
@@ -134,7 +153,7 @@ const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void
       recurseDirectory(currentPath, fileCallback, directoryCallback);
 
     }else if(fileCallback){
-        fileCallback(currentPath);
+      fileCallback(currentPath);
     }
   });
 };
@@ -207,7 +226,7 @@ const getData = (): any => {
  * @param callback - callback with html contents
  * @returns {void}
  */
-const renderPage = (pagePath: string, data: Object, callback: (html: string) => void) => {
+const renderPage = (pagePath: string, data: Record<string, unknown>, callback: (html: string) => void): void => {
   const file = path.parse(pagePath);
 
   for(const pageHandler of pageHandlers){
@@ -234,9 +253,9 @@ const renderPage = (pagePath: string, data: Object, callback: (html: string) => 
  * @param targetName - Name the file should be saved under
  */
 let pages: {
-  filePath: string,
-  data: Object,
-  targetName?: string
+  filePath: string;
+  data: Record<string, unknown>;
+  targetName?: string;
 }[] = [];
 /**
  * Renders all pages in options.srcDir and saves them in options.buildDir, as well as copies all files from options.srcDir/options.staticDir to options.buildDir.
@@ -293,6 +312,12 @@ addFileHandler({extension: "json", message: "parsed", callback: (data, file, fil
   data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 });
+/**
+ * Default YAML File Handler
+ */
+addFileHandler({extension: "yaml", message: "parsed", callback: (data, file, filePath) => {
+  data[file.name] = yaml.load(fs.readFileSync(filePath, 'utf8'))
+}})
 /**
  * Default CSS File Handler
  */

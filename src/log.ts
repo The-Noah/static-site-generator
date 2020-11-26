@@ -33,7 +33,7 @@ class Logger implements ILogger{
     }
 
     console.log(`[\x1b[32m+${RESET}]`, message);
-  };
+  }
   /**
    * Method to Output a Error
    * @param message - Output
@@ -44,7 +44,7 @@ class Logger implements ILogger{
     }
 
     console.error(`[\x1b[31m-${RESET}]`, message);
-  };
+  }
   /**
    * Method to Output a Warning
    * @param message - Output
@@ -56,7 +56,7 @@ class Logger implements ILogger{
 
     console.log(`[\x1b[33m!${RESET}]`, message);
 
-  };
+  }
 }
 
 const logger = new Logger();
