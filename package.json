@@ -1,7 +1,7 @@
 {
   "name": "@the-noah/static-site-generator",
   "version": "1.3.5",
-  "description": "Generates an optimized static website",
+  "description": "Generate an optimized static website, or use at run-time with a custom server",
   "keywords": [
     "compress",
     "minify",
@@ -9,7 +9,6 @@
     "cli",
     "web",
     "website",
-    "website-generator",
     "static-website-generator",
     "generator",
     "build",
@@ -19,10 +18,11 @@
     "development",
     "developer-tools",
     "webserver",
-    "moe",
     "typescript",
     "ejs",
-    "json"
+    "json",
+    "javascript",
+    "compressed"
   ],
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
