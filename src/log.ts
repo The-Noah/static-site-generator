@@ -7,12 +7,6 @@ export interface ILogger{
 }
 
 const RESET = "\x1b[0m";
-<<<<<<< Updated upstream
-
-class Logger implements ILogger{
-  level = 0;
-
-=======
 /**
  * Provides a basic implementation of ILogger
  */
@@ -22,35 +16,23 @@ class Logger implements ILogger{
    * Method to Output Information
    * @param message - Output
    */
->>>>>>> Stashed changes
   info(message: any): void{
     if(this.level > 0){
       return;
     }
 
     console.log(`[\x1b[36mi${RESET}]`, message);
-<<<<<<< Updated upstream
   }
-
-=======
-    
-  };
   /**
    * Method to Output a Success
    * @param message - Output
    */
->>>>>>> Stashed changes
   success(message: any): void{
     if(this.level > 1){
       return;
     }
 
     console.log(`[\x1b[32m+${RESET}]`, message);
-<<<<<<< Updated upstream
-  }
-=======
->>>>>>> Stashed changes
-
   };
   /**
    * Method to Output a Error
@@ -62,11 +44,6 @@ class Logger implements ILogger{
     }
 
     console.error(`[\x1b[31m-${RESET}]`, message);
-<<<<<<< Updated upstream
-  }
-=======
->>>>>>> Stashed changes
-
   };
   /**
    * Method to Output a Warning
@@ -78,14 +55,9 @@ class Logger implements ILogger{
     }
 
     console.log(`[\x1b[33m!${RESET}]`, message);
-<<<<<<< Updated upstream
-  }
-}
-=======
 
   };
-};
->>>>>>> Stashed changes
+}
 
 const logger = new Logger();
 export default logger;
