@@ -1,33 +1,54 @@
+// main imports
 import * as fs from "fs";
 import * as path from "path";
 
-// Template engines
+// template engines
 import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
 
-// File support
+// file support
 import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
 
-// Optimization
+// optimization
 import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
 
 import {ILogger, default as defaultLogger} from "./log";
-const logger: ILogger = defaultLogger;
+let logger: ILogger = defaultLogger;
 
 const htmlMinify = htmlMinifer.minify;
 
+// interfaces
+interface IFileHandler{
+  extension: string,
+  message: string,
+  callback: (data: any, file: any, filePath: string) => void,
+}
+
+interface IPageHandler{
+  extension: string,
+  callback: (data: any, filePath: string, callback: (html: string) => void) => void
+}
+
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
+/**
+ * Create options Object with built-in defaults
+ * @param srcDir - Path to look in for files.
+ * @param buildDir - Path to save final files to.
+ * @param staticDir - Path in srcDir to look for static files.
+ * @param logLevel - 0 = all, 1 = no info, 2 = no sucess, 3 = no warning, 4 = no error - each level also inherits from the last
+ * @param compressionLevel - How much to compress files - 0 = none, 3 = max
+ */
 let options: {
-  srcDir: string;
-  buildDir: string;
-  staticDir: string;
-  logLevel: number;
-  markdownTemplate: string | false;
-  compressionLevel: number;
+  srcDir: string,
+  buildDir: string,
+  staticDir: string,
+  logLevel: number,
+  markdownTemplate: string | false,
+  compressionLevel: number
 } = {
   srcDir: "src",
   buildDir: "build",
@@ -37,38 +58,52 @@ let options: {
   compressionLevel: 2
 };
 
+// Import options if found
 if(fs.existsSync(configPath)){
   options = {
     ...options,
     ...JSON.parse(fs.readFileSync(configPath, "utf8"))
-  };
-}
-
-logger.info(`log level: ${options.logLevel}`);
-logger.info(`compression level: ${options.compressionLevel}`);
-logger.level = options.logLevel;
-
-if(fs.existsSync(configPath)){
+  }
   logger.info(`using config file ${configPath}`);
 }
 
+logger.info(`log level: ${options.logLevel}`);
+
+logger.info(`compression level: ${options.compressionLevel}`);
+
+logger.level = options.logLevel;
+
 options.srcDir = path.join(process.cwd(), options.srcDir);
+
 options.buildDir = path.join(process.cwd(), options.buildDir);
+
 options.staticDir = path.join(options.srcDir, options.staticDir);
 
 const fileHandlers: any[] = [];
-const addFileHandler = (extension: string, message: string, callback: (data: any, file: any, filePath: string) => void) => {
-  fileHandlers.push({extension, message, callback});
+/**
+ * Method to add a new fileHandler
+ * @param fileHandler - File Handler Options
+ */
+const addFileHandler = (fileHandler: IFileHandler) => {
+  fileHandlers.push(fileHandler);
 };
 
 const pageHandlers: any[] = [];
-const addPageHandler = (extension: string, _callback: (data: any, filePath: string, callback: (html: string) => void) => void) => {
-  pageHandlers.push({extension, callback: _callback});
+/**
+ * Method to add a new pageHandler
+ * @param pageHandler - Page Handler Options
+ */
+const addPageHandler = (pageHandler: IPageHandler) => {
+  pageHandlers.push(pageHandler);
 };
-
+/**
+ * Method to add a new PageFile
+ * @param extension - Extension of File
+ */
 const addPageFile = (extension: string) => {
-  addFileHandler(extension, "found page", (data, file, filePath) => {
+  addFileHandler({extension, message: "found page", callback: (data, file, filePath) => {
     const page = fs.readFileSync(filePath, "utf8");
+
     if(!page.startsWith("<!DOCTYPE html>")){
       logger.info(`${file.base} doesn't appear to be a page - skipping`);
       return;
@@ -78,9 +113,15 @@ const addPageFile = (extension: string) => {
       filePath,
       data: {}
     });
+    }
   });
 };
-
+/**
+ * Calls fileCallback for each file in the directory and subdirectories, and directoryCallback for each directory.
+ * @param dir - Path of Directory to recurse
+ * @param fileCallback - File Path
+ * @param directoryCallback - Directory Path
+ */
 const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void) => {
   fs.readdirSync(dir).forEach((file) => {
     const currentPath = path.join(dir, file);
@@ -91,21 +132,23 @@ const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void
       }
 
       recurseDirectory(currentPath, fileCallback, directoryCallback);
+
     }else if(fileCallback){
-      if(fileCallback){
         fileCallback(currentPath);
-      }
     }
   });
 };
-
+/**
+ * Method to Delete a Directory
+ * @param dir - Path of Directory to Delete
+ */
 const deleteDirectory = (dir: string) => {
   const dirsToRemove: string[] = [];
 
   recurseDirectory(dir, (file) => {
     fs.unlinkSync(file);
-  }, (_dir) => {
-    dirsToRemove.push(_dir);
+  }, (dir) => {
+    dirsToRemove.push(dir);
   });
 
   for(const dirToRemove of dirsToRemove){
@@ -114,7 +157,11 @@ const deleteDirectory = (dir: string) => {
 
   fs.rmdirSync(dir);
 };
-
+/**
+ * Method to Copy a Directory
+ * @param source - Path of Directory you wish to copy
+ * @param target - Target Path for copied Directory
+ */
 const copyDirectory = (source: string, target: string) => {
   if(!fs.existsSync(target)){
     fs.mkdirSync(target);
@@ -122,7 +169,9 @@ const copyDirectory = (source: string, target: string) => {
 
   recurseDirectory(source, (file) => {
     fs.copyFileSync(file, path.join(target, file.split(source)[1]));
+
     logger.success(`copied ${path.parse(file).base}`);
+
   }, (dir) => {
     const newDir = path.join(target, dir.split(source)[1]);
 
@@ -131,7 +180,10 @@ const copyDirectory = (source: string, target: string) => {
     }
   });
 };
-
+/**
+ * Returns all data from files found in options.srcDir.
+ * @returns {Object}
+ */
 const getData = (): any => {
   const data = {};
 
@@ -148,8 +200,14 @@ const getData = (): any => {
 
   return data;
 };
-
-const renderPage = (pagePath: string, data: any, callback: (html: string) => void) => {
+/**
+ * Renders the page found at `pagePath` with the data `data` and calls `callback` with the resulting minified HTML.
+ * @param pagePath - Path of page to render
+ * @param data - Data to render
+ * @param callback - callback with html contents
+ * @returns {void}
+ */
+const renderPage = (pagePath: string, data: Object, callback: (html: string) => void) => {
   const file = path.parse(pagePath);
 
   for(const pageHandler of pageHandlers){
@@ -169,13 +227,22 @@ const renderPage = (pagePath: string, data: any, callback: (html: string) => voi
     }
   }
 };
-
+/**
+ * Create list of pages
+ * @param filePath - Path of page file
+ * @param data - Data of page file
+ * @param targetName - Name the file should be saved under
+ */
 let pages: {
-  filePath: string;
-  data: Record<string, unknown>;
-  targetName?: string;
+  filePath: string,
+  data: Object,
+  targetName?: string
 }[] = [];
-const build = () => {
+/**
+ * Renders all pages in options.srcDir and saves them in options.buildDir, as well as copies all files from options.srcDir/options.staticDir to options.buildDir.
+ * @returns {void}
+ */
+const build = (): void => {
   logger.info(`building ${path.parse(process.cwd()).base} to ${path.parse(options.buildDir).base}...`);
   pages = [];
 
@@ -190,6 +257,7 @@ const build = () => {
   if(fs.existsSync(options.buildDir)){
     deleteDirectory(options.buildDir);
   }
+
   fs.mkdirSync(options.buildDir);
 
   if(fs.existsSync(options.staticDir)){
@@ -201,6 +269,7 @@ const build = () => {
 
   for(const page of pages){
     const file = path.parse(page.filePath);
+
     const targetDir = path.parse(path.join(options.buildDir, page.filePath.split(options.srcDir)[1])).dir;
 
     if(!fs.existsSync(targetDir)){
@@ -217,45 +286,68 @@ const build = () => {
 
   logger.info("done!");
 };
-
-addFileHandler("json", "parsed", (data, file, filePath) => {
+/**
+ * Default JSON File Handler
+ */
+addFileHandler({extension: "json", message: "parsed", callback: (data, file, filePath) => {
   data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+}
 });
-
-addFileHandler("css", "compressed", (data, file, filePath) => {
+/**
+ * Default CSS File Handler
+ */
+addFileHandler({extension: "css", message: "compressed", callback: (data, file, filePath) => {
   if(!data.css){
     data.css = {};
   }
 
-  data.css[file.name] = sass.renderSync({file: filePath, outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"}).css.toString();
+  data.css[file.name] = (sass.renderSync({
+    file: filePath,
+    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
+  })).css.toString();
+}
 });
-
-addFileHandler("scss", "compiled", (data, file, filePath) => {
+/**
+ * Default SCSS File Handler
+ */
+addFileHandler({extension: "scss", message: "compiled", callback: (data, file, filePath) => {
   if(!data.css){
     data.css = {};
   }
 
-  data.css[file.name] = sass.renderSync({file: filePath, outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"}).css.toString();
+  data.css[file.name] = (sass.renderSync({
+    file: filePath,
+    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
+  })).css.toString();
+}
 });
-
-addFileHandler("js", "compressed", async (data, file, filePath) => {
+/**
+ * Default JS File Handler
+ */
+addFileHandler({extension: "js", message: "compressed", callback: async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
-
   const code = fs.readFileSync(filePath, "utf8");
-  data.js[file.name] = options.compressionLevel >= 1 ? (await terser.minify(code)).code : code;
-});
 
-addFileHandler("ts", "compiled", async (data, file, filePath) => {
+  data.js[file.name] = options.compressionLevel >= 1 ? (await terser.minify(code)).code : code;
+}
+});
+/**
+ * Default TS File Handler
+ */
+addFileHandler({extension: "ts", message: "compiled", callback: async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
 
   data.js[file.name] = (await terser.minify(typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {}).outputText)).code;
+}
 });
-
-addFileHandler("md", "parsed", (data, file, filePath) => {
+/**
+ * Default MD File Handler
+ */
+addFileHandler({extension: "md", message: "parsed", callback: (data, file, filePath) => {
   if(!data.markdown){
     data.markdown = {};
   }
@@ -265,6 +357,7 @@ addFileHandler("md", "parsed", (data, file, filePath) => {
   }
 
   const markdown = markdownParser(fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n"));
+
   const markdownData = {
     metadata: markdown.metadata,
     content: marked(markdown.content)
@@ -277,12 +370,17 @@ addFileHandler("md", "parsed", (data, file, filePath) => {
     data: markdownData,
     targetName: file.name
   });
+}
 });
-
+// ejs and moe page files
 addPageFile("ejs");
+
 addPageFile("moe");
 
-addPageHandler("ejs", (data, filePath, callback) => {
+/**
+ * Default EJS Page Handler
+ */
+addPageHandler({extension: "ejs", callback: (data, filePath, callback) => {
   ejs.renderFile(filePath, data, (err, html) => {
     if(err){
       return logger.error(err);
@@ -290,9 +388,12 @@ addPageHandler("ejs", (data, filePath, callback) => {
 
     callback(html);
   });
+}
 });
-
-addPageHandler("moe", (data, filePath, callback) => {
+/**
+ * Default MOE Page Handler
+ */
+addPageHandler({extension: "moe", callback: (data, filePath, callback) => {
   moe.compileFile(filePath, "UTF8", (err: any, template: any) => {
     if(err){
       return logger.error(err);
@@ -300,6 +401,7 @@ addPageHandler("moe", (data, filePath, callback) => {
 
     callback(template(data));
   });
+}
 });
 
 export {
