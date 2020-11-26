@@ -6,7 +6,7 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/The-Noah/static-site-generator)
 [![npm (scoped)](https://img.shields.io/npm/v/@the-noah/static-site-generator)](https://www.npmjs.com/package/@the-noah/static-site-generator)
 
-Generates an optimized static website.
+Generate an optimized static website, or use at run-time with a custom server.
 
 </div>
 
