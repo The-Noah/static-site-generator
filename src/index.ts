@@ -57,7 +57,7 @@ options.buildDir = path.join(process.cwd(), options.buildDir);
 options.staticDir = path.join(options.srcDir, options.staticDir);
 
 const fileHandlers: any[] = [];
-const addFileHandler = (extension: string, message: string, callback: (data: Record<string, unknown>, file: any, filePath: string) => void) => {
+const addFileHandler = (extension: string, message: string, callback: (data: any, file: any, filePath: string) => void) => {
   fileHandlers.push({extension, message, callback});
 };
 
@@ -149,7 +149,7 @@ const getData = (): any => {
   return data;
 };
 
-const renderPage = (pagePath: string, data: Record<string, unknown>, callback: (html: string) => void) => {
+const renderPage = (pagePath: string, data: any, callback: (html: string) => void) => {
   const file = path.parse(pagePath);
 
   for(const pageHandler of pageHandlers){
