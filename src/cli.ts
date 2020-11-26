@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// Imports
+
 import * as fs from "fs";
 import * as path from "path";
-import {createServer} from "http";
+import {createServer as createHttpServer} from "http";
 
 import WebSocket from "ws";
 import {program} from "commander";
@@ -10,8 +10,6 @@ import {program} from "commander";
 const {version} = require("../package.json");
 import * as staticSiteGenerator from ".";
 
-
-// Port Variables
 const PORT = 3000;
 const WS_PORT = 3001;
 
@@ -27,40 +25,37 @@ program
   .option("--single-page", "redirect 404 to index.html")
   .parse(process.argv);
 
-// configure staticSiteGenerator Options
+// Setup options
+
 if(program.srcDir){
   staticSiteGenerator.options.staticDir = path.join(path.resolve(program.srcDir), staticSiteGenerator.options.staticDir.split(staticSiteGenerator.options.srcDir)[1]);
-
   staticSiteGenerator.options.srcDir = path.resolve(program.srcDir);
 }
+
 if(program.buildDir){
   staticSiteGenerator.options.buildDir = path.resolve(program.buildDir);
 }
+
 if(program.staticDir){
   staticSiteGenerator.options.staticDir = path.join(staticSiteGenerator.options.srcDir, path.resolve(program.staticDir));
 }
+
 if(program.logLevel !== undefined && !isNaN(program.logLevel)){
   staticSiteGenerator.options.logLevel = program.logLevel;
 }
+
 if(program.compressionLevel !== undefined && !isNaN(program.compressionLevel)){
   staticSiteGenerator.options.compressionLevel = program.compressionLevel;
 }
 
 staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
 
-/**
- * Configures the Environment
- * @returns Default - Setup command-line arguments and breaks
- * @returns build - Builds staticSiteGenerator and breaks
- * @returns watch - Builds staticSiteGenerator and watches for changes
- * @returns dev - Builds staticSiteGenerator and creates dev enviornment
- */
 switch(process.argv[2]){
 case "watch": {
   staticSiteGenerator.build();
   staticSiteGenerator.logger.info("watching files for changes...");
 
-  const changed = (event: any, file: string) => {
+  const changed = () => {
     try{
       staticSiteGenerator.build();
     }catch(err){
@@ -78,11 +73,12 @@ case "dev": {
   staticSiteGenerator.logger.info("starting dev server...");
 
   const wss = new WebSocket.Server({port: WS_PORT});
-  wss.on("connection", (ws) => {
+
+  wss.on("connection", () => {
     staticSiteGenerator.logger.success("new WS connection");
   });
 
-  const changed = (event: any, file: string) => {
+  const changed = () => {
     wss.clients.forEach((client) => {
       client.send("reload");
     });
@@ -92,13 +88,14 @@ case "dev": {
   staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
     fs.watch(dir, changed);
   });
+
   /**
-     * Renders a HTML Page
-     * @param url - URL of HTML page to render
-     * @returns resolve - 404 Page not found
-     * @returns resolve - html content
-     */
-  const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve, reject) => {
+   * Renders a HTML Page
+   * @param url - URL of HTML page to render
+   * @returns resolve - 404 Page not found
+   * @returns resolve - html content
+   */
+  const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve) => {
     const filePath = path.join(staticSiteGenerator.options.srcDir, url);
 
     const filePaths = {
@@ -130,10 +127,8 @@ case "dev": {
       resolve(html);
     });
   });
-    /**
-     * Creates a HTTP server
-     */
-  createServer(async (req, res) => {
+
+  createHttpServer(async (req, res) => {
     let url = `${req.url}`.slice(1);
     if(`${req.url}`.endsWith("/")){
       url += "index.html";
@@ -166,20 +161,10 @@ case "dev": {
     staticSiteGenerator.logger.success(`dev server running at http://localhost:${PORT}`);
   });
 } break;
-case "build": {
+case "build":
   staticSiteGenerator.build();
   break;
-}
 default:
-// Setup command-line arguments
-  program.version(version, "-v, --version");
-  program
-    .option("--src-dir <path>", "source directory for files")
-    .option("-d, --build-dir <path>", "build directory for files")
-    .option("--static-dir <path>", "directory for static files")
-    .option("--log-level <level>", "how much information to log", parseInt)
-    .option("--compression-level <level>", "how much to compress files", parseInt)
-    .option("--single-page", "redirect 404 to index.html")
-    .parse(process.argv);
+  staticSiteGenerator.logger.error("available commands: build, watch, dev");
   break;
 }
