@@ -40,7 +40,7 @@ Generate an optimized static website, or use at run-time with a custom server.
 2. Optimizes JavaScript.
 3. Supports TypeScript.
 4. Embed data from JSON.
-5. HTML templates with ejs ore moe.
+5. HTML templates with ejs and moe.
 6. Automatically copies static files.
 7. Can be used with a web server.
 
