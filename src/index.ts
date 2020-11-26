@@ -11,6 +11,9 @@ import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
 
+import {ILogger, default as defaultLogger} from "./log";
+let logger: ILogger = defaultLogger;
+
 const htmlMinify = htmlMinifer.minify;
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
@@ -37,43 +40,12 @@ if(fs.existsSync(configPath)){
   }
 }
 
-const RESET = "\x1b[0m";
-const log = {
-  info: (message: any) => {
-    if(options.logLevel > 0){
-      return;
-    }
-
-    console.log(`[\x1b[36mi${RESET}]`, message);
-  },
-  success: (message: any) => {
-    if(options.logLevel > 1){
-      return;
-    }
-
-    console.log(`[\x1b[32m+${RESET}]`, message);
-  },
-  error: (message: any) => {
-    if(options.logLevel > 2){
-      return;
-    }
-
-    console.error(`[\x1b[31m-${RESET}]`, message);
-  },
-  warn: (message: any) => {
-    if(options.logLevel > 3){
-      return;
-    }
-
-    console.log(`[\x1b[33m!${RESET}]`, message);
-  }
-};
-
-console.log(`log level: ${options.logLevel}`);
-log.info(`compression level: ${options.compressionLevel}`);
+logger.info(`log level: ${options.logLevel}`);
+logger.info(`compression level: ${options.compressionLevel}`);
+logger.level = options.logLevel;
 
 if(fs.existsSync(configPath)){
-  log.info(`using config file ${configPath}`);
+  logger.info(`using config file ${configPath}`);
 }
 
 options.srcDir = path.join(process.cwd(), options.srcDir);
@@ -94,7 +66,7 @@ const addPageFile = (extension: string) => {
   addFileHandler(extension, "found page", (data, file, filePath) => {
     const page = fs.readFileSync(filePath, "utf8");
     if(!page.startsWith("<!DOCTYPE html>")){
-      log.info(`${file.base} doesn't appear to be a page - skipping`);
+      logger.info(`${file.base} doesn't appear to be a page - skipping`);
       return;
     }
 
@@ -146,7 +118,7 @@ const copyDirectory = (source: string, target: string) => {
 
   recurseDirectory(source, (file) => {
     fs.copyFileSync(file, path.join(target, file.split(source)[1]));
-    log.success(`copied ${path.parse(file).base}`);
+    logger.success(`copied ${path.parse(file).base}`);
   }, (dir) => {
     const newDir = path.join(target, dir.split(source)[1]);
 
@@ -165,7 +137,7 @@ const getData = (): any => {
     for(const fileHandler of fileHandlers){
       if(file.ext === `.${fileHandler.extension}`){
         fileHandler.callback(data, file, filePath);
-        log.success(`${fileHandler.message} ${file.base}`);
+        logger.success(`${fileHandler.message} ${file.base}`);
       }
     }
   });
@@ -188,7 +160,7 @@ const renderPage = (pagePath: string, data: Object, callback: (html: string) => 
           collapseWhitespace: options.compressionLevel >= 2
         }));
 
-        log.success(`rendered ${file.base}`);
+        logger.success(`rendered ${file.base}`);
       });
     }
   }
@@ -200,15 +172,15 @@ let pages: {
   targetName?: string
 }[] = [];
 const build = () => {
-  log.info(`building ${path.parse(process.cwd()).base} to ${path.parse(options.buildDir).base}...`);
+  logger.info(`building ${path.parse(process.cwd()).base} to ${path.parse(options.buildDir).base}...`);
   pages = [];
 
   if(!fs.existsSync(options.srcDir)){
-    return log.error("no src in current directory");
+    return logger.error("no src in current directory");
   }
 
   if(!fs.existsSync(path.join(options.srcDir, "index.ejs"))){
-    log.warn("no index.ejs in src directory - this is NOT an error!");
+    logger.warn("no index.ejs in src directory - this is NOT an error!");
   }
 
   if(fs.existsSync(options.buildDir)){
@@ -217,7 +189,7 @@ const build = () => {
   fs.mkdirSync(options.buildDir);
 
   if(fs.existsSync(options.staticDir)){
-    log.info("copying static files...");
+    logger.info("copying static files...");
     copyDirectory(options.staticDir, options.buildDir);
   }
 
@@ -239,7 +211,7 @@ const build = () => {
     });
   }
 
-  log.info("done!");
+  logger.info("done!");
 };
 
 addFileHandler("json", "parsed", (data, file, filePath) => {
@@ -291,7 +263,7 @@ addFileHandler("md", "parsed", (data, file, filePath) => {
   }
 
   if(!options.markdownTemplate){
-    log.warn("no markdown template for markdown files - this is NOT an error!");
+    logger.warn("no markdown template for markdown files - this is NOT an error!");
   }
 
   const markdown = markdownParser(fs.readFileSync(filePath, "utf8").replace(/\r\n/g, "\n"));
@@ -315,7 +287,7 @@ addPageFile("moe");
 addPageHandler("ejs", (data, filePath, callback) => {
   ejs.renderFile(filePath, data, (err, html) => {
     if(err){
-      return log.error(err);
+      return logger.error(err);
     }
 
     callback(html);
@@ -325,7 +297,7 @@ addPageHandler("ejs", (data, filePath, callback) => {
 addPageHandler("moe", (data, filePath, callback) => {
   moe.compileFile(filePath, "UTF8", (err: any, template: any) => {
     if(err){
-      return log.error(err);
+      return logger.error(err);
     }
 
     callback(template(data));
@@ -333,7 +305,9 @@ addPageHandler("moe", (data, filePath, callback) => {
 });
 
 export {
-  log,
+  ILogger,
+  defaultLogger,
+  logger,
   recurseDirectory,
   build,
   addFileHandler,

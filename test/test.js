@@ -3,36 +3,36 @@ const staticSiteGenerator = require("../dist");
 
 const data = staticSiteGenerator.getData();
 
-staticSiteGenerator.log.info("starting tests...");
+staticSiteGenerator.logger.info("starting tests...");
 
 if(data.css.style !== "h1{color:red}\n"){
-  staticSiteGenerator.log.error("SCSS failed");
+  staticSiteGenerator.logger.error("SCSS failed");
   process.exit(-1);
 }else{
-  staticSiteGenerator.log.success("SCSS passed");
+  staticSiteGenerator.logger.success("SCSS passed");
 }
 
 if(data.js.app === "alert(\"Hello, World!\");\n"){
-  staticSiteGenerator.log.error("TypeScript failed");
+  staticSiteGenerator.logger.error("TypeScript failed");
   process.exit(-1);
 }else{
-  staticSiteGenerator.log.success("TypeScript passed");
+  staticSiteGenerator.logger.success("TypeScript passed");
 }
 
 if(data.blog[0].date === "2020-5-6\n"){
-  staticSiteGenerator.log.error("JSON failed");
+  staticSiteGenerator.logger.error("JSON failed");
   process.exit(-1);
 }else{
-  staticSiteGenerator.log.success("JSON passed");
+  staticSiteGenerator.logger.success("JSON passed");
 }
 
 staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), {message: "Hello, World!"}, (html) => {
   if(html === "<h1>Hello, World!</h1>\n"){
-    staticSiteGenerator.log.error("EJS failed");
+    staticSiteGenerator.logger.error("EJS failed");
     process.exit(-1);
   }else{
-    staticSiteGenerator.log.success("EJS passed");
+    staticSiteGenerator.logger.success("EJS passed");
   }
 });
 
-staticSiteGenerator.log.success("all tests passed!");
+staticSiteGenerator.logger.success("all tests passed!");

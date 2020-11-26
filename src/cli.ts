@@ -39,16 +39,18 @@ if(program.compressionLevel !== undefined && program.compressionLevel !== NaN){
   staticSiteGenerator.options.compressionLevel = program.compressionLevel;
 }
 
+staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
+
 switch(process.argv[2]){
   case "watch": {
     staticSiteGenerator.build();
-    staticSiteGenerator.log.info("watching files for changes...");
+    staticSiteGenerator.logger.info("watching files for changes...");
 
     const changed = (event: any, file: string) => {
       try{
         staticSiteGenerator.build();
       }catch(err){
-        staticSiteGenerator.log.error(err);
+        staticSiteGenerator.logger.error(err);
       }
     };
 
@@ -58,11 +60,11 @@ switch(process.argv[2]){
     });
   } break;
   case "dev": {
-    staticSiteGenerator.log.info("starting dev server...");
+    staticSiteGenerator.logger.info("starting dev server...");
 
     const wss = new WebSocket.Server({port: WS_PORT});
     wss.on("connection", (ws) => {
-      staticSiteGenerator.log.success("new WS connection");
+      staticSiteGenerator.logger.success("new WS connection");
     });
 
     const changed = (event: any, file: string) => {
@@ -85,7 +87,7 @@ switch(process.argv[2]){
 
       const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
       if(file === "404"){
-        staticSiteGenerator.log.warn("404 page not found");
+        staticSiteGenerator.logger.warn("404 page not found");
         resolve("404 not found");
       }
 
@@ -115,7 +117,7 @@ switch(process.argv[2]){
       const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
 
       if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
-        staticSiteGenerator.log.success(`serving static file ${url}`);
+        staticSiteGenerator.logger.success(`serving static file ${url}`);
         res.write(fs.readFileSync(staticPath));
         res.end();
       }else if(url.endsWith(".html")){
@@ -123,7 +125,7 @@ switch(process.argv[2]){
         res.end();
       }else{
         if(program.singlePage){
-          staticSiteGenerator.log.info("serving 404 as index.html due to --single-page flag");
+          staticSiteGenerator.logger.info("serving 404 as index.html due to --single-page flag");
           res.write(await renderHtmlPage("index.html"));
         }else{
           res.write("404 not found");
@@ -132,7 +134,7 @@ switch(process.argv[2]){
         res.end();
       }
     }).listen(PORT, () => {
-      staticSiteGenerator.log.success(`dev server running at http://localhost:${PORT}`);
+      staticSiteGenerator.logger.success(`dev server running at http://localhost:${PORT}`);
     });
   } break;
   default:
