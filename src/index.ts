@@ -1,33 +1,33 @@
 import * as fs from "fs";
 import * as path from "path";
 
-// template engines
+// Template engines
 import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
 
-// file support
+// File support
 import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
 
-// optimization
+// Optimization
 import * as terser from "terser";
 import * as htmlMinifer from "html-minifier";
 
 import {ILogger, default as defaultLogger} from "./log";
-let logger: ILogger = defaultLogger;
+const logger: ILogger = defaultLogger;
 
 const htmlMinify = htmlMinifer.minify;
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
 let options: {
-  srcDir: string,
-  buildDir: string,
-  staticDir: string,
-  logLevel: number,
-  markdownTemplate: string | false,
-  compressionLevel: number
+  srcDir: string;
+  buildDir: string;
+  staticDir: string;
+  logLevel: number;
+  markdownTemplate: string | false;
+  compressionLevel: number;
 } = {
   srcDir: "src",
   buildDir: "build",
@@ -41,7 +41,7 @@ if(fs.existsSync(configPath)){
   options = {
     ...options,
     ...JSON.parse(fs.readFileSync(configPath, "utf8"))
-  }
+  };
 }
 
 logger.info(`log level: ${options.logLevel}`);
@@ -57,13 +57,13 @@ options.buildDir = path.join(process.cwd(), options.buildDir);
 options.staticDir = path.join(options.srcDir, options.staticDir);
 
 const fileHandlers: any[] = [];
-const addFileHandler = (extension: string, message: string, callback: (data: any, file: any, filePath: string) => void) => {
+const addFileHandler = (extension: string, message: string, callback: (data: Record<string, unknown>, file: any, filePath: string) => void) => {
   fileHandlers.push({extension, message, callback});
 };
 
 const pageHandlers: any[] = [];
-const addPageHandler = (extension: string, callback: (data: any, filePath: string, callback: (html: string) => void) => void) => {
-  pageHandlers.push({extension, callback});
+const addPageHandler = (extension: string, _callback: (data: any, filePath: string, callback: (html: string) => void) => void) => {
+  pageHandlers.push({extension, callback: _callback});
 };
 
 const addPageFile = (extension: string) => {
@@ -104,8 +104,8 @@ const deleteDirectory = (dir: string) => {
 
   recurseDirectory(dir, (file) => {
     fs.unlinkSync(file);
-  }, (dir) => {
-    dirsToRemove.push(dir);
+  }, (_dir) => {
+    dirsToRemove.push(_dir);
   });
 
   for(const dirToRemove of dirsToRemove){
@@ -149,7 +149,7 @@ const getData = (): any => {
   return data;
 };
 
-const renderPage = (pagePath: string, data: Object, callback: (html: string) => void) => {
+const renderPage = (pagePath: string, data: Record<string, unknown>, callback: (html: string) => void) => {
   const file = path.parse(pagePath);
 
   for(const pageHandler of pageHandlers){
@@ -171,9 +171,9 @@ const renderPage = (pagePath: string, data: Object, callback: (html: string) => 
 };
 
 let pages: {
-  filePath: string,
-  data: Object,
-  targetName?: string
+  filePath: string;
+  data: Record<string, unknown>;
+  targetName?: string;
 }[] = [];
 const build = () => {
   logger.info(`building ${path.parse(process.cwd()).base} to ${path.parse(options.buildDir).base}...`);
@@ -227,10 +227,7 @@ addFileHandler("css", "compressed", (data, file, filePath) => {
     data.css = {};
   }
 
-  data.css[file.name] = (sass.renderSync({
-    file: filePath,
-    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
-  })).css.toString();
+  data.css[file.name] = sass.renderSync({file: filePath, outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"}).css.toString();
 });
 
 addFileHandler("scss", "compiled", (data, file, filePath) => {
@@ -238,18 +235,15 @@ addFileHandler("scss", "compiled", (data, file, filePath) => {
     data.css = {};
   }
 
-  data.css[file.name] = (sass.renderSync({
-    file: filePath,
-    outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"
-  })).css.toString();
+  data.css[file.name] = sass.renderSync({file: filePath, outputStyle: options.compressionLevel >= 2 ? "compressed" : options.compressionLevel === 1 ? "compact" : "nested"}).css.toString();
 });
 
 addFileHandler("js", "compressed", async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
   }
-  const code = fs.readFileSync(filePath, "utf8");
 
+  const code = fs.readFileSync(filePath, "utf8");
   data.js[file.name] = options.compressionLevel >= 1 ? (await terser.minify(code)).code : code;
 });
 

@@ -7,8 +7,9 @@ export interface ILogger{
 }
 
 const RESET = "\x1b[0m";
+
 class Logger implements ILogger{
-  level: number = 0;
+  level = 0;
 
   info(message: any): void{
     if(this.level > 0){
@@ -16,7 +17,7 @@ class Logger implements ILogger{
     }
 
     console.log(`[\x1b[36mi${RESET}]`, message);
-  };
+  }
 
   success(message: any): void{
     if(this.level > 1){
@@ -24,7 +25,7 @@ class Logger implements ILogger{
     }
 
     console.log(`[\x1b[32m+${RESET}]`, message);
-  };
+  }
 
   error(message: any): void{
     if(this.level > 2){
@@ -32,7 +33,7 @@ class Logger implements ILogger{
     }
 
     console.error(`[\x1b[31m-${RESET}]`, message);
-  };
+  }
 
   warn(message: any): void{
     if(this.level > 3){
@@ -40,8 +41,8 @@ class Logger implements ILogger{
     }
 
     console.log(`[\x1b[33m!${RESET}]`, message);
-  };
-};
+  }
+}
 
 const logger = new Logger();
 export default logger;
