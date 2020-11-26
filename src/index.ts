@@ -1,6 +1,7 @@
 // main imports
 import * as fs from "fs";
 import * as path from "path";
+import * as yaml from "js-yaml";
 
 // template engines
 import * as ejs from "ejs";
@@ -34,6 +35,7 @@ interface IPageHandler{
 }
 
 const configPath = path.join(process.cwd(), ".static-site-generator.config.json");
+const yamlConfigPath = path.join(process.cwd(), ".static-site-generator.config.yaml");
 
 /**
  * Configuration options
@@ -74,11 +76,25 @@ let options: {
 
 // Import options file if found
 if(fs.existsSync(configPath)){
-  options = {
-    ...options,
-    ...JSON.parse(fs.readFileSync(configPath, "utf8"))
-  };
-  logger.info(`using config file ${configPath}`);
+  try{
+    options = {
+      ...options,
+      ...JSON.parse(fs.readFileSync(configPath, "utf8"))
+    };
+    logger.info(`using config file ${configPath}`);
+  }catch(e){
+   logger.error(`JSON Error: ${e}`) 
+  }
+}else if(fs.existsSync(yamlConfigPath)){
+  try{
+    options = {
+      ...options,
+      ...yaml.load(fs.readFileSync(yamlConfigPath, "utf8"), { json: true})
+    };
+    logger.info(`using config file ${yamlConfigPath}`);
+  }catch(e){
+    logger.error(`YAML Error: ${e}`);
+  }
 }
 
 logger.info(`log level: ${options.logLevel}`);
@@ -110,7 +126,7 @@ const addPageHandler = (pageHandler: IPageHandler): void => {
 
 /**
  * Add file handler for page
- * @param extension - Extension of File
+ * @param extension - Extension of file
  */
 const addPageFile = (extension: string): void => {
   addFileHandler({extension, message: "found page", callback: (data, file, filePath) => {
@@ -127,6 +143,7 @@ const addPageFile = (extension: string): void => {
     });
   }});
 };
+
 /**
  * Calls fileCallback for each file in the directory and subdirectories, and directoryCallback for each directory.
  * @param dir - Path of directory to recurse
@@ -143,7 +160,6 @@ const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void
       }
 
       recurseDirectory(currentPath, fileCallback, directoryCallback);
-
     }else if(fileCallback){
       fileCallback(currentPath);
     }
@@ -152,7 +168,7 @@ const recurseDirectory = (dir: string, fileCallback?: (filePath: string) => void
 
 /**
  * Delete a directory recursively
- * @param dir - Path of Directory to delete
+ * @param dir - Path of directory to delete
  */
 const deleteDirectory = (dir: string) => {
   const dirsToRemove: string[] = [];
@@ -184,7 +200,6 @@ const copyDirectory = (source: string, target: string) => {
     fs.copyFileSync(file, path.join(target, file.split(source)[1]));
 
     logger.success(`copied ${path.parse(file).base}`);
-
   }, (dir) => {
     const newDir = path.join(target, dir.split(source)[1]);
 
@@ -195,7 +210,7 @@ const copyDirectory = (source: string, target: string) => {
 };
 
 /**
- * Returns all data from files found in options.srcDir
+ * Returns all data from files found in `options.srcDir`
  * @returns All data
  */
 const getData = (): Record<string, unknown> => {
@@ -220,7 +235,6 @@ const getData = (): Record<string, unknown> => {
  * @param pagePath - Path of page to render
  * @param data - Data to render
  * @param callback - callback with html contents
- * @returns {void}
  */
 const renderPage = (pagePath: string, data: Record<string, unknown>, callback: (html: string) => void): void => {
   const file = path.parse(pagePath);
@@ -309,6 +323,13 @@ const build = (): void => {
 addFileHandler({extension: "json", message: "parsed", callback: (data, file, filePath) => {
   data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
 }});
+
+/**
+ * YAML File Handler
+ */
+addFileHandler({extension: "yaml", message: "parsed", callback: (data, file, filePath) => {
+  data[file.name] = yaml.load(fs.readFileSync(filePath, 'utf8'))
+}})
 
 /**
  * CSS file handler

@@ -73,6 +73,7 @@ case "dev": {
   staticSiteGenerator.logger.info("starting dev server...");
 
   const wss = new WebSocket.Server({port: WS_PORT});
+
   wss.on("connection", () => {
     staticSiteGenerator.logger.success("new WS connection");
   });
