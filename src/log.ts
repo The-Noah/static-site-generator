@@ -1,6 +1,3 @@
-import {isTemplateLiteral} from "typescript";
-import {inherits} from "util";
-
 export interface ILogger{
   level: number;
   info: (message: any) => void;

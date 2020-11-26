@@ -1,15 +1,19 @@
 import * as fs from "fs";
 import * as path from "path";
 
+// template engines
 import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
 
+// file support
 import * as sass from "node-sass";
-import * as terser from "terser";
-import * as htmlMinifer from "html-minifier";
 import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
+
+// optimization
+import * as terser from "terser";
+import * as htmlMinifer from "html-minifier";
 
 import {ILogger, default as defaultLogger} from "./log";
 let logger: ILogger = defaultLogger;

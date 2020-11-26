@@ -3,10 +3,11 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createServer} from "http";
+
 import WebSocket from "ws";
 import {program} from "commander";
-const {version} = require("../package.json");
 
+const {version} = require("../package.json");
 import * as staticSiteGenerator from ".";
 
 const PORT = 3000;
