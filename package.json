@@ -31,7 +31,7 @@
     "watch": "tsc -w",
     "pretest": "npm run build",
     "test": "cd test && node test.js",
-    "prepublish": "npm run build",
+    "prepare": "npm run build",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix"
   },

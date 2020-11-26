@@ -26,7 +26,14 @@ if(data.blog[0].date === "2020-5-6\n"){
   staticSiteGenerator.logger.success("JSON passed");
 }
 
-staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), {message: "Hello, World!"}, (html) => {
+if(data.test === "test:\"hello\""){
+  staticSiteGenerator.logger.error('YAML Failed')
+  process.exit(-1)
+}else{
+  staticSiteGenerator.logger.success('YAML passed')
+}
+
+staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), { message: "Hello, World!" }, (html) => {
   if(html === "<h1>Hello, World!</h1>\n"){
     staticSiteGenerator.logger.error("EJS failed");
     process.exit(-1);
