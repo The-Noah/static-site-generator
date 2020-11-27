@@ -10,6 +10,8 @@ Generate an optimized static website, or use at run-time with a custom server.
 
 </div>
 
+> ⚠ The project is currently under a rewrite. The new v2.0 documentation is below. If you wish to see v1.3.5 docs, they are available [here](https://github.com/The-Noah/static-site-generator/blob/95dd6bde2ed25b1730b90f9f4b369764d8b420cb/README.md).
+
 ## Table of Contents
 
 - [Static Site Generator](#static-site-generator)
@@ -24,13 +26,14 @@ Generate an optimized static website, or use at run-time with a custom server.
   - [Library](#library)
     - [Importing](#importing)
     - [`build()`](#build)
-    - [`renderPage(pagePath, data, callback)`](#renderpagepagepath-data-callback)
+    - [`renderPage(pagePath, data)`](#renderpagepagepath-data)
     - [`getData()`](#getdata)
   - [Page Templates](#page-templates)
   - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
     - [CSS & SASS](#css--sass)
     - [JavaScript & TypeScript](#javascript--typescript)
     - [JSON](#json)
+    - [YAML](#yaml)
   - [Examples](#examples)
     - [Express Server](#express-server)
 
@@ -38,11 +41,11 @@ Generate an optimized static website, or use at run-time with a custom server.
 
 1. Compiles and optimizes SCSS files.
 2. Optimizes JavaScript.
-3. Supports TypeScript.
-4. Embed data from JSON.
+3. Compiles TypeScript to JavaScript.
+4. Embed data from JSON and YAML files.
 5. HTML templates with ejs and moe.
 6. Automatically copies static files.
-7. Can be used with a web server.
+7. Can be used with a custom web server.
 
 # Documentation
 
@@ -62,12 +65,12 @@ Add `static-site-generator` as a script in your `package.json` to build your web
 
 The configuration file must be named `.static-site-generator.config.json` and must be in the root of your project. Configuration is available in `options`.
 
-| Property  | Type   | Default  | Description |
-| --------- | ------ | -------- | ----------- |
-| srcDir    | String | "src"    | Path to look in for files. |
-| buildDir  | String | "build"  | Path to save final files to. |
-| staticDir | String | "static" | Path in `srcDir` to look for static files. |
-| logLevel  | Number | 0        | `0` = all, `1` = no info, `2` = no sucess, `3` = no warning, `4` = no error - each level also inherits from the last |
+| Property  | Type     | Default  | Description |
+| --------- | -------- | -------- | ----------- |
+| srcDir    | `string` | "src"    | Path to look in for files. |
+| buildDir  | `string` | "build"  | Path to save final files to. |
+| staticDir | `string` | "static" | Path in `srcDir` to look for static files. |
+| logLevel  | `number` | 0        | `0` = all, `1` = no info, `2` = no sucess, `3` = no warning, `4` = no error - each level also inherits from the last |
 | compressionLevel | Number | 2 | How much to compress files - `0` = none, `3` = max |
 
 ## Command-Line Interface (CLI)
@@ -82,53 +85,50 @@ static-site-generator can be used as a library, such as with a web server.
 
 **JavaScript**
 ```javascript
-const staticSiteGenerator = require("@the-noah/static-site-generator");
+const {staticSiteGenerator} = require("@the-noah/static-site-generator");
 ```
 
 **TypeScript**
 ```typescript
-import * as staticSiteGenerator from "@the-noah/static-site-generator";
+import staticSiteGenerator from "@the-noah/static-site-generator";
 ```
 
 ### `build()`
 
 Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`.
 
-**Returns** `void`
+**Returns** `Promise<Record<string, unknown>>`
 
 **Example**
 ```javascript
-staticSiteGenerator.build();
+await staticSiteGenerator.build();
 ```
 
-### `renderPage(pagePath, data, callback)`
+### `renderPage(pagePath, data)`
 
-Renders the page found at `pagePath` with the data `data` and calls `callback` with the resulting minified HTML.
+Renders the page found at `pagePath` with the data `data` and returns a `Promise<string>` containing the minified HTML.
 
-**Returns** `void`
+**Returns** `Promise<string>`
 
-| Property | Type     | Description |
-| -------- | -------- | ----------- |
-| pagePath | String   | Path of the page to render. |
-| data     | Object   | Data used to render the page. |
-| callback | Function | Called when the page finishes rendering, with the paramater being the HTML as a string. |
+| Property | Type                      | Description |
+| -------- | ------------------------- | ----------- |
+| pagePath | `string`                  | Path of the page to render. |
+| data     | `Record<string, unknown>` | Data used to render the page. |
 
 **Example**
 ```javascript
-staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World!"}, (html) => {
-  console.log(html);
-});
+const html = await staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World!"});
 ```
 
 ### `getData()`
 
 Returns all data from files found in `options.srcDir`.
 
-**Returns** `Object`
+**Returns** `Promise<Record<string, unknown>>`
 
 **Example**
 ```javascript
-console.log(staticSiteGenerator.getData());
+console.log(await staticSiteGenerator.getData());
 ```
 
 ## Page Templates
@@ -137,6 +137,8 @@ The following template engines are built-in.
 
 - [ejs](https://www.npmjs.com/package/ejs)
 - [moe](https://www.npmjs.com/package/@toptensoftware/moe-js)
+
+You can easily add your own using the `addPageFile` and `addPageHandler` methods.
 
 ## Understanding How Data is Collected and Used
 
@@ -201,7 +203,23 @@ console.log(data.js.app === "alert(\"Hello, World!\");"); // true
 ```
 
 ```javascript
-console.log(data.blog[0].date === "2020-5-6"); // true
+console.log(data.blog[0].date !== "2020-5-6") // true
+```
+
+### YAML
+
+`.yaml` and `.yml` files will be available under their filename.
+
+**Example**
+
+`test.yml` will be available under `yml`.
+
+```yaml
+message: "hello"
+```
+
+```javascript
+console.log(data.test.message === "hello"); // true
 ```
 
 ## Examples
@@ -217,10 +235,8 @@ const express = require("express");
 const app = express();
 const PORT = 3000;
 
-app.get("/", (req, res) => {
-  staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), staticSiteGenerator.getData(), (html) => {
-    res.send(html);
-  });
+app.get("/", async (req, res) => {
+  res.send(staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), await staticSiteGenerator.getData());
 });
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
