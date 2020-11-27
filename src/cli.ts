@@ -3,49 +3,59 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createServer as createHttpServer} from "http";
-
+import * as yargs from "yargs"
 import WebSocket from "ws";
 import {program} from "commander";
 
 const {version} = require("../package.json");
 import * as staticSiteGenerator from ".";
-
 const PORT = 3000;
 const WS_PORT = 3001;
 
 
 // Setup command-line arguments
-program.version(version, "-v, --version");
-program
-  .option("--src-dir <path>", "source directory for files")
-  .option("-d, --build-dir <path>", "build directory for files")
-  .option("--static-dir <path>", "directory for static files")
-  .option("--log-level <level>", "how much information to log", parseInt)
-  .option("--compression-level <level>", "how much to compress files", parseInt)
-  .option("--single-page", "redirect 404 to index.html")
-  .parse(process.argv);
+const options = yargs
+  .usage('Example:\nstatic-site-generator build --srcDir "../test/src" --buildDir "../test/build" --log 0 --compressionLevel 2\n\nFlags: \n --help\n --version')
+  .option('help', {alias: "h", describe: "Show Help", type: "boolean", demandOption: false})
+  .option("version", {alias: 'v', describe: "Show Version Number", type: "boolean", demandOption: false})
+  .option("srcDir", {describe: "Source directory for file", type: 'string', demandOption: false})
+  .option("buildDir", {describe: "Build directory for files", type: "string", demandOption: false})
+  .option("staticDir", {describe: "Drirectory for static files", type: "string", demandOption: false})
+  .option("logLevel", {alias: "log", describe: "0: all, 1: no info, 2: no sucess 3: no warning, 4: no error", type: "number", demandOption: false, default: 0})
+  .option('compressionLevel', {describe: "0: none 2: somewhat compressed 3: max", type: "number", demandOption: false, default: 2})
+  .option('singlePage', {alias: "sp", describe: "Redirect 404 to index.html", type: "boolean", demandOption: false})
+  .parse(process.argv)
+
+// program
+//   .option("--src-dir <path>", "source directory for files")
+//   .option("-d, --build-dir <path>", "build directory for files")
+//   .option("--static-dir <path>", "directory for static files")
+//   .option("--log-level <level>", "how much information to log", parseInt)
+//   .option("--compression-level <level>", "how much to compress files", parseInt)
+//   .option("--single-page", "redirect 404 to index.html")
+//   .parse(process.argv);
 
 // Setup options
 
-if(program.srcDir){
-  staticSiteGenerator.options.staticDir = path.join(path.resolve(program.srcDir), staticSiteGenerator.options.staticDir.split(staticSiteGenerator.options.srcDir)[1]);
-  staticSiteGenerator.options.srcDir = path.resolve(program.srcDir);
+if(options.srcDir){
+  staticSiteGenerator.options.staticDir = path.join(path.resolve(options.srcDir), staticSiteGenerator.options.staticDir.split(staticSiteGenerator.options.srcDir)[1]);
+  staticSiteGenerator.options.srcDir = path.resolve(options.srcDir);
 }
 
-if(program.buildDir){
-  staticSiteGenerator.options.buildDir = path.resolve(program.buildDir);
+if(options.buildDir){
+  staticSiteGenerator.options.buildDir = path.resolve(options.buildDir);
 }
 
-if(program.staticDir){
-  staticSiteGenerator.options.staticDir = path.join(staticSiteGenerator.options.srcDir, path.resolve(program.staticDir));
+if(options.staticDir){
+  staticSiteGenerator.options.staticDir = path.join(staticSiteGenerator.options.srcDir, path.resolve(options.staticDir));
 }
 
-if(program.logLevel !== undefined && !isNaN(program.logLevel)){
-  staticSiteGenerator.options.logLevel = program.logLevel;
+if(options.logLevel){
+  staticSiteGenerator.options.logLevel = options.logLevel;
 }
 
-if(program.compressionLevel !== undefined && !isNaN(program.compressionLevel)){
-  staticSiteGenerator.options.compressionLevel = program.compressionLevel;
+if(options.compressionLevel){
+  staticSiteGenerator.options.compressionLevel = options.compressionLevel;
 }
 
 staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
@@ -147,7 +157,7 @@ case "dev": {
 
       res.end();
     }else{
-      if(program.singlePage){
+      if(options.singlePage){
         staticSiteGenerator.logger.info("serving 404 as index.html due to --single-page flag");
 
         res.write(await renderHtmlPage("index.html"));
