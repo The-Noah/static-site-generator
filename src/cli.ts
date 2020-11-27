@@ -3,37 +3,31 @@
 import * as fs from "fs";
 import * as path from "path";
 import {createServer as createHttpServer} from "http";
-import * as yargs from "yargs"
+
+import * as yargs from "yargs";
 import WebSocket from "ws";
-import {program} from "commander";
 
 const {version} = require("../package.json");
-import * as staticSiteGenerator from ".";
+import staticSiteGenerator from ".";
+import * as utils from "./utils";
+
 const PORT = 3000;
 const WS_PORT = 3001;
 
+staticSiteGenerator.loadConfig();
 
 // Setup command-line arguments
 const options = yargs
-  .usage('Example:\nstatic-site-generator build --srcDir "../test/src" --buildDir "../test/build" --log 0 --compressionLevel 2\n\nFlags: \n --help\n --version')
-  .option('help', {alias: "h", describe: "Show Help", type: "boolean", demandOption: false})
-  .option("version", {alias: 'v', describe: "Show Version Number", type: "boolean", demandOption: false})
-  .option("srcDir", {describe: "Source directory for file", type: 'string', demandOption: false})
+  .usage("Example:\nstatic-site-generator build --srcDir \"../test/src\" --buildDir \"../test/build\" --log 0 --compressionLevel 2\n\nFlags:\n --help\n --version")
+  .option("help", {alias: "h", describe: "Show Help", type: "boolean", demandOption: false})
+  .option("version", {alias: "v", describe: "Show Version Number", type: "boolean", demandOption: false})
+  .option("srcDir", {describe: "Source directory for file", type: "string", demandOption: false})
   .option("buildDir", {describe: "Build directory for files", type: "string", demandOption: false})
   .option("staticDir", {describe: "Drirectory for static files", type: "string", demandOption: false})
   .option("logLevel", {alias: "log", describe: "0: all, 1: no info, 2: no sucess 3: no warning, 4: no error", type: "number", demandOption: false, default: 0})
-  .option('compressionLevel', {describe: "0: none 2: somewhat compressed 3: max", type: "number", demandOption: false, default: 2})
-  .option('singlePage', {alias: "sp", describe: "Redirect 404 to index.html", type: "boolean", demandOption: false})
-  .parse(process.argv)
-
-// program
-//   .option("--src-dir <path>", "source directory for files")
-//   .option("-d, --build-dir <path>", "build directory for files")
-//   .option("--static-dir <path>", "directory for static files")
-//   .option("--log-level <level>", "how much information to log", parseInt)
-//   .option("--compression-level <level>", "how much to compress files", parseInt)
-//   .option("--single-page", "redirect 404 to index.html")
-//   .parse(process.argv);
+  .option("compressionLevel", {describe: "0: none 2: somewhat compressed 3: max", type: "number", demandOption: false, default: 2})
+  .option("singlePage", {alias: "sp", describe: "Redirect 404 to index.html", type: "boolean", demandOption: false})
+  .parse(process.argv);
 
 // Setup options
 
@@ -52,13 +46,12 @@ if(options.staticDir){
 
 if(options.logLevel){
   staticSiteGenerator.options.logLevel = options.logLevel;
+  staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
 }
 
 if(options.compressionLevel){
   staticSiteGenerator.options.compressionLevel = options.compressionLevel;
 }
-
-staticSiteGenerator.logger.level = staticSiteGenerator.options.logLevel;
 
 switch(process.argv[2]){
 case "watch": {
@@ -75,7 +68,7 @@ case "watch": {
 
   fs.watch(staticSiteGenerator.options.srcDir, changed);
 
-  staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
+  utils.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
     fs.watch(dir, changed);
   });
 } break;
@@ -95,7 +88,7 @@ case "dev": {
   };
 
   fs.watch(staticSiteGenerator.options.srcDir, changed);
-  staticSiteGenerator.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
+  utils.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
     fs.watch(dir, changed);
   });
 
@@ -105,7 +98,7 @@ case "dev": {
    * @returns resolve - 404 Page not found
    * @returns resolve - html content
    */
-  const renderHtmlPage = (url: string): Promise<string> => new Promise((resolve) => {
+  const renderHtmlPage = async (url: string): Promise<string> => {
     const filePath = path.join(staticSiteGenerator.options.srcDir, url);
 
     const filePaths = {
@@ -117,26 +110,25 @@ case "dev": {
     if(file === "404"){
       staticSiteGenerator.logger.warn("404 page not found");
 
-      resolve("404 not found");
+      return "404 not found";
     }
 
-    staticSiteGenerator.renderPage(file, staticSiteGenerator.getData(), (html) => {
-      let normalDoc = false;
-      if(html.endsWith("</body></html>")){
-        normalDoc = true;
+    let html = await staticSiteGenerator.renderPage(file, await staticSiteGenerator.getData());
+    let normalDoc = false;
+    if(html.endsWith("</body></html>")){
+      normalDoc = true;
 
-        html = html.substring(0, html.length - "</body></html>".length);
-      }
+      html = html.substring(0, html.length - "</body></html>".length);
+    }
 
-      html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
+    html += `<script>var ssgs=new WebSocket("ws://localhost:${WS_PORT}");ssgs.onmessage=function(event){if(event.data==="reload"){window.location.reload()}}</script>`;
 
-      if(normalDoc){
-        html += "</body></html>";
-      }
+    if(normalDoc){
+      html += "</body></html>";
+    }
 
-      resolve(html);
-    });
-  });
+    return html;
+  };
 
   createHttpServer(async (req, res) => {
     let url = `${req.url}`.slice(1);

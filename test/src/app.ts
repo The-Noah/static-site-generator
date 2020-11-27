@@ -1,3 +1,3 @@
 // app.js
 
-alert("Hello, World!");
+let message: string = "Hello, World!";
