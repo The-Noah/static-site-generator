@@ -35,6 +35,13 @@ staticSiteGenerator.addFileHandler({extension: "yaml", message: "parsed", callba
 }});
 
 /**
+ * YAML (.yml) File Handler
+ */
+staticSiteGenerator.addFileHandler({extension: "yml", message: "parsed", callback: async (data, file, filePath) => {
+  data[file.name] = yaml.load(fs.readFileSync(filePath, "utf8"));
+}});
+
+/**
  * CSS file handler
  */
 staticSiteGenerator.addFileHandler({extension: "css", message: "compressed", callback: async (data, file, filePath) => {
