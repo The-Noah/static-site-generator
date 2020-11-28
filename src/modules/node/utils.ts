@@ -1,5 +1,7 @@
-import * as fs from "fs";
-import * as path from "path";
+import * as _fs from "fs";
+
+import fs from "./fs";
+import path from "./path";
 
 /**
  * Calls fileCallback for each file in the directory and subdirectories, and directoryCallback for each directory.
@@ -11,7 +13,7 @@ export const recurseDirectory = async (dir: string, fileCallback?: (filePath: st
   for(const file of fs.readdirSync(dir)){
     const currentPath = path.join(dir, file);
 
-    if(fs.lstatSync(currentPath).isDirectory()){
+    if(fs.isDirectory(currentPath)){
       if(directoryCallback){
         directoryCallback(currentPath);
       }
@@ -31,16 +33,16 @@ export const deleteDirectory = (dir: string): void => {
   const dirsToRemove: string[] = [];
 
   recurseDirectory(dir, (file) => {
-    fs.unlinkSync(file);
+    _fs.unlinkSync(file);
   }, (_dir) => {
     dirsToRemove.push(_dir);
   });
 
   for(const dirToRemove of dirsToRemove){
-    fs.rmdirSync(dirToRemove);
+    _fs.rmdirSync(dirToRemove);
   }
 
-  fs.rmdirSync(dir);
+  _fs.rmdirSync(dir);
 };
 
 /**

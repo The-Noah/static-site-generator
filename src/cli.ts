@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 
-import * as fs from "fs";
-import * as path from "path";
 import {createServer as createHttpServer} from "http";
 
 import * as yargs from "yargs";
 import WebSocket from "ws";
 
 import staticSiteGenerator from ".";
-import * as utils from "./utils";
+import {fs, path} from "./modules/node";
 
 const PORT = 3000;
 const WS_PORT = 3001;
@@ -57,9 +55,6 @@ yargs
     };
 
     fs.watch(staticSiteGenerator.options.srcDir, changed);
-    utils.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
-      fs.watch(dir, changed);
-    });
   })
   .command("dev", "Creates dev server and reloads on file change", () => {}, async (argv) => {
     parseArgs(argv);
@@ -79,9 +74,6 @@ yargs
     };
 
     fs.watch(staticSiteGenerator.options.srcDir, changed);
-    utils.recurseDirectory(staticSiteGenerator.options.srcDir, undefined, (dir) => {
-      fs.watch(dir, changed);
-    });
 
     /**
      * Renders a HTML Page
@@ -99,8 +91,8 @@ yargs
 
       const file = fs.existsSync(filePaths.ejs) ? filePaths.ejs : fs.existsSync(filePaths.moe) ? filePaths.moe : "404";
       if(file === "404"){
-        staticSiteGenerator.logger.warn("404 page not found");
-        return "404 not found";
+        staticSiteGenerator.logger.warn("404: page not found");
+        return "404: page not found";
       }
 
       let html = await staticSiteGenerator.renderPage(file, await staticSiteGenerator.getData());
@@ -127,10 +119,10 @@ yargs
 
       const staticPath = path.join(staticSiteGenerator.options.staticDir, url);
 
-      if(fs.existsSync(staticPath) && !fs.lstatSync(staticPath).isDirectory()){
+      if(fs.existsSync(staticPath) && !fs.isDirectory(staticPath)){
         staticSiteGenerator.logger.success(`serving static file ${url}`);
 
-        res.write(fs.readFileSync(staticPath));
+        res.write(fs.readTextFileSync(staticPath));
         res.end();
       }else if(url.endsWith(".html")){
         res.write(await renderHtmlPage(url));

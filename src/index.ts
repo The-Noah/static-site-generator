@@ -1,13 +1,13 @@
 // main imports
 import * as fs from "fs";
 import * as path from "path";
-import * as yaml from "js-yaml";
 
 // template engines
 import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
 
 // file support
+import {yaml} from "./modules/node";
 import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
@@ -31,14 +31,14 @@ staticSiteGenerator.addFileHandler({extension: "json", message: "parsed", callba
  * YAML File Handler
  */
 staticSiteGenerator.addFileHandler({extension: "yaml", message: "parsed", callback: async (data, file, filePath) => {
-  data[file.name] = yaml.load(fs.readFileSync(filePath, "utf8"));
+  data[file.name] = yaml(filePath);
 }});
 
 /**
  * YAML (.yml) File Handler
  */
 staticSiteGenerator.addFileHandler({extension: "yml", message: "parsed", callback: async (data, file, filePath) => {
-  data[file.name] = yaml.load(fs.readFileSync(filePath, "utf8"));
+  data[file.name] = yaml(filePath);
 }});
 
 /**

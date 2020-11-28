@@ -1,13 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
-
-import * as yaml from "js-yaml";
-import * as htmlMinifer from "html-minifier";
-
-import * as utils from "./utils";
 import {ILogger, default as defaultLogger} from "./log";
-
-const htmlMinify = htmlMinifer.minify;
+import {utils, fs, path, yaml, htmlMinifier} from "./modules/node";
 
 /**
   * Configuration options
@@ -105,7 +97,7 @@ export class StaticSiteGenerator{
       try{
         this.options = {
           ...this.options,
-          ...JSON.parse(fs.readFileSync(jsonConfigPath, "utf8"))
+          ...JSON.parse(fs.readTextFileSync(jsonConfigPath))
         };
         this.configChanged();
 
@@ -117,7 +109,7 @@ export class StaticSiteGenerator{
       try{
         this.options = {
           ...this.options,
-          ...yaml.load(fs.readFileSync(yamlConfigPath, "utf8"), {json: true})
+          ...yaml(yamlConfigPath)
         };
         this.configChanged();
 
@@ -152,7 +144,7 @@ export class StaticSiteGenerator{
    */
   addPageFile(extension: string): void{
     this.addFileHandler({extension, message: "found page", callback: async (data, file, filePath) => {
-      const page = fs.readFileSync(filePath, "utf8");
+      const page = fs.readTextFileSync(filePath);
 
       if(!page.startsWith("<!DOCTYPE html>")){
         this.logger.info(`${file.base} doesn't appear to be a page - skipping`);
@@ -173,7 +165,7 @@ export class StaticSiteGenerator{
   async getData(): Promise<Record<string, unknown>>{
     const data = {};
 
-    await utils.recurseDirectory(this.options.srcDir, async (filePath) => {
+    await utils.recurseDirectory(this.options.srcDir, async (filePath: string) => {
       const file = path.parse(filePath);
 
       for(const fileHandler of this.fileHandlers){
@@ -199,14 +191,7 @@ export class StaticSiteGenerator{
     for(const pageHandler of this.pageHandlers){
       if(file.ext === `.${pageHandler.extension}`){
         const html = await pageHandler.callback(data, pagePath);
-        const minHtml = htmlMinify(html, {
-          html5: true,
-          collapseInlineTagWhitespace: this.options.compressionLevel >= 3,
-          removeComments: this.options.compressionLevel >= 1,
-          removeRedundantAttributes: this.options.compressionLevel >= 1,
-          removeTagWhitespace: this.options.compressionLevel >= 3,
-          collapseWhitespace: this.options.compressionLevel >= 2
-        });
+        const minHtml = htmlMinifier(html, this.options.compressionLevel);
 
         this.logger.success(`rendered ${file.base}`);
         return minHtml;
@@ -253,7 +238,7 @@ export class StaticSiteGenerator{
         fs.mkdirSync(targetDir);
       }
 
-      fs.writeFileSync(path.join(targetDir, `${page.targetName ?? file.name}.html`), await this.renderPage(page.filePath, {...data, ...page.data}));
+      fs.writeTextFileSync(path.join(targetDir, `${page.targetName ?? file.name}.html`), await this.renderPage(page.filePath, {...data, ...page.data}));
     }
 
     this.logger.info("done!");
