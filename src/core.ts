@@ -89,8 +89,8 @@ export class StaticSiteGenerator{
   loadConfig(name?: string): void{
     const configName = name ?? ".static-site-generator.config";
 
-    const jsonConfigPath = path.join(process.cwd(), `${configName}.json`);
-    const yamlConfigPath = path.join(process.cwd(), `${configName}.yaml`);
+    const jsonConfigPath = path.join(path.cwd(), `${configName}.json`);
+    const yamlConfigPath = path.join(path.cwd(), `${configName}.yaml`);
 
     // Import options file if found
     if(fs.existsSync(jsonConfigPath)){
@@ -205,7 +205,7 @@ export class StaticSiteGenerator{
    * Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`
    */
   async build(): Promise<void>{
-    this.logger.info(`building ${path.parse(process.cwd()).base} to ${path.parse(this.options.buildDir).base}...`);
+    this.logger.info(`building ${path.parse(path.cwd()).base} to ${path.parse(this.options.buildDir).base}...`);
     this.pages = [];
 
     if(!fs.existsSync(this.options.srcDir)){
@@ -247,8 +247,8 @@ export class StaticSiteGenerator{
   private configChanged(): void{
     this.logger.level = this.options.logLevel;
 
-    this.options.srcDir = path.join(process.cwd(), this.options.srcDir);
-    this.options.buildDir = path.join(process.cwd(), this.options.buildDir);
+    this.options.srcDir = path.join(path.cwd(), this.options.srcDir);
+    this.options.buildDir = path.join(path.cwd(), this.options.buildDir);
     this.options.staticDir = path.join(this.options.srcDir, this.options.staticDir);
   }
 }

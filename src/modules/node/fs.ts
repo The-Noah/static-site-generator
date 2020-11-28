@@ -51,7 +51,7 @@ export const copyFileSync = (from: string, to: string): void => _fs.copyFileSync
  * @param path Path to watch
  * @param callback Callback on event
  */
-export const watch = (path: string, callback: () => void): void => {
+export const watch = async (path: string, callback: () => void): Promise<void> => {
   _fs.watch(path, callback);
   utils.recurseDirectory(path, undefined, (dir) => {
     _fs.watch(dir, callback);
