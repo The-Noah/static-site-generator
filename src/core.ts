@@ -242,7 +242,7 @@ export class StaticSiteGenerator{
       utils.copyDirectory(this.options.staticDir, this.options.buildDir);
     }
 
-    const data = this.getData();
+    const data = await this.getData();
 
     for(const page of this.pages){
       const file = path.parse(page.filePath);
