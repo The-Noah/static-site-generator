@@ -10,8 +10,6 @@ Generate an optimized static website, or use at run-time with a custom server.
 
 </div>
 
-> ⚠ The project is currently under a rewrite. The new v2.0 documentation is below. If you wish to see v1.3.5 docs, they are available [here](https://github.com/The-Noah/static-site-generator/blob/95dd6bde2ed25b1730b90f9f4b369764d8b420cb/README.md).
-
 ## Table of Contents
 
 - [Static Site Generator](#static-site-generator)
@@ -25,9 +23,9 @@ Generate an optimized static website, or use at run-time with a custom server.
   - [Command-Line Interface (CLI)](#command-line-interface-cli)
   - [Library](#library)
     - [Importing](#importing)
-    - [`build()`](#build)
-    - [`renderPage(pagePath, data)`](#renderpagepagepath-data)
-    - [`getData()`](#getdata)
+    - [`async build()`](#async-build)
+    - [`async renderPage(pagePath, data)`](#async-renderpagepagepath-data)
+    - [`async getData()`](#async-getdata)
   - [Page Templates](#page-templates)
   - [Understanding How Data is Collected and Used](#understanding-how-data-is-collected-and-used)
     - [CSS & SASS](#css--sass)
@@ -90,21 +88,21 @@ const {staticSiteGenerator} = require("@the-noah/static-site-generator");
 
 **TypeScript**
 ```typescript
-import staticSiteGenerator from "@the-noah/static-site-generator";
+import {staticSiteGenerator} from "@the-noah/static-site-generator";
 ```
 
-### `build()`
+### `async build()`
 
 Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`.
 
-**Returns** `Promise<Record<string, unknown>>`
+**Returns** `Promise<void>`
 
 **Example**
 ```javascript
 await staticSiteGenerator.build();
 ```
 
-### `renderPage(pagePath, data)`
+### `async renderPage(pagePath, data)`
 
 Renders the page found at `pagePath` with the data `data` and returns a `Promise<string>` containing the minified HTML.
 
@@ -120,7 +118,7 @@ Renders the page found at `pagePath` with the data `data` and returns a `Promise
 const html = await staticSiteGenerator.renderPage("index.ejs", {message: "Hello, World!"});
 ```
 
-### `getData()`
+### `async getData()`
 
 Returns all data from files found in `options.srcDir`.
 
@@ -229,14 +227,14 @@ console.log(data.test.message === "hello"); // true
 ```javascript
 const path = require("path");
 
-const staticSiteGenerator = require("@the-noah/static-site-generator");
+const {staticSiteGenerator} = require("@the-noah/static-site-generator");
 const express = require("express");
 
 const app = express();
 const PORT = 3000;
 
 app.get("/", async (req, res) => {
-  res.send(staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), await staticSiteGenerator.getData());
+  res.send(await staticSiteGenerator.renderPage(path.join(staticSiteGenerator.options.srcDir, "index.ejs"), await staticSiteGenerator.getData());
 });
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));

@@ -1,6 +1,6 @@
 {
   "name": "@the-noah/static-site-generator",
-  "version": "1.3.5",
+  "version": "2.0.0",
   "description": "Generate an optimized static website, or use at run-time with a custom server",
   "keywords": [
     "compress",
@@ -46,7 +46,7 @@
   },
   "homepage": "https://github.com/The-Noah/static-site-generator#readme",
   "bin": {
-    "static-site-generator": "dist/cli.js"
+    "static-site-generator": "dist/node_cli.js"
   },
   "dependencies": {
     "@toptensoftware/moe-js": "^0.4.0",

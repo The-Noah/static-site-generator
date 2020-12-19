@@ -7,7 +7,6 @@ import * as ejs from "ejs";
 const moe = require("@toptensoftware/moe-js");
 
 // file support
-import {yaml} from "./modules/node";
 import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
@@ -16,30 +15,10 @@ const markdownParser = require("markdown-yaml-metadata-parser");
 // optimization
 import {minify as jsMinify} from "terser";
 
-import {StaticSiteGenerator} from "./core";
+import {StaticSiteGenerator} from "./core.js";
+import lib from "./lib/node/index.js";
 
-const staticSiteGenerator = new StaticSiteGenerator();
-
-/**
- * JSON file handler
- */
-staticSiteGenerator.addFileHandler({extension: "json", message: "parsed", callback: async (data, file, filePath) => {
-  data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
-}});
-
-/**
- * YAML File Handler
- */
-staticSiteGenerator.addFileHandler({extension: "yaml", message: "parsed", callback: async (data, file, filePath) => {
-  data[file.name] = yaml(filePath);
-}});
-
-/**
- * YAML (.yml) File Handler
- */
-staticSiteGenerator.addFileHandler({extension: "yml", message: "parsed", callback: async (data, file, filePath) => {
-  data[file.name] = yaml(filePath);
-}});
+export const staticSiteGenerator = new StaticSiteGenerator(lib);
 
 /**
  * CSS file handler
@@ -89,7 +68,12 @@ staticSiteGenerator.addFileHandler({extension: "ts", message: "compiled", callba
     data.js = {};
   }
 
-  const jsCode = typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {compilerOptions: {module: typescript.ModuleKind.CommonJS}}).outputText;
+  const jsCode = typescript.transpileModule(fs.readFileSync(filePath, "utf8"), {compilerOptions: {
+    module: typescript.ModuleKind.ES2015,
+    target: typescript.ScriptTarget.ES2015,
+    esModuleInterop: true,
+    lib: ["dom", "es6"]
+  }}).outputText;
   data.js[file.name] = staticSiteGenerator.options.compressionLevel >= 1 ? (await jsMinify(jsCode)).code : jsCode;
 }});
 
@@ -129,7 +113,13 @@ staticSiteGenerator.addPageFile("moe");
  * EJS template handler
  */
 staticSiteGenerator.addPageHandler({extension: "ejs", callback: async (data, filePath): Promise<string> =>
-  ejs.render(fs.readFileSync(filePath, "utf8"), data)
+  new Promise((resolve, reject) => ejs.renderFile(filePath, data, (err, html) => {
+    if(err){
+      reject(err);
+    }
+
+    resolve(html);
+  }))
 });
 
 /**
@@ -139,9 +129,3 @@ staticSiteGenerator.addPageHandler({extension: "moe", callback: async (data, fil
   const template = moe.compile(fs.readFileSync(filePath, "utf8"));
   return await template(data);
 }});
-
-export {
-  StaticSiteGenerator,
-  staticSiteGenerator
-};
-export default staticSiteGenerator;

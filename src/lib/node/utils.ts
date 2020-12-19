@@ -1,15 +1,11 @@
+import {IUtils} from "../lib.js";
+
 import * as _fs from "fs";
 
-import fs from "./fs";
-import path from "./path";
+import fs from "./fs.js";
+import path from "./path.js";
 
-/**
- * Calls fileCallback for each file in the directory and subdirectories, and directoryCallback for each directory.
- * @param dir - Path of directory to recurse
- * @param fileCallback - File callback
- * @param directoryCallback - Directory callback
- */
-export const recurseDirectory = async (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void): Promise<void> => {
+const recurseDirectory = async (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void): Promise<void> => {
   for(const file of fs.readdirSync(dir)){
     const currentPath = path.join(dir, file);
 
@@ -25,11 +21,7 @@ export const recurseDirectory = async (dir: string, fileCallback?: (filePath: st
   }
 };
 
-/**
- * Delete a directory recursively
- * @param dir - Path of directory to delete
- */
-export const deleteDirectory = (dir: string): void => {
+const deleteDirectory = (dir: string): void => {
   const dirsToRemove: string[] = [];
 
   recurseDirectory(dir, (file) => {
@@ -45,12 +37,7 @@ export const deleteDirectory = (dir: string): void => {
   _fs.rmdirSync(dir);
 };
 
-/**
- * Copy a directory recursively
- * @param source - Path of directory you wish to copy
- * @param target - Target path for copied directory
- */
-export const copyDirectory = (source: string, target: string): void => {
+const copyDirectory = (source: string, target: string): void => {
   if(!fs.existsSync(target)){
     fs.mkdirSync(target);
   }
@@ -65,3 +52,9 @@ export const copyDirectory = (source: string, target: string): void => {
     }
   });
 };
+
+export default {
+  recurseDirectory,
+  deleteDirectory,
+  copyDirectory
+} as IUtils;

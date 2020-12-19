@@ -1,5 +1,5 @@
-import {ILogger, default as defaultLogger} from "./log";
-import {utils, fs, path, yaml, htmlMinifier} from "./modules/node";
+import {ILogger, default as defaultLogger} from "./log.js";
+import {ILib} from "./lib/lib.js";
 
 /**
   * Configuration options
@@ -58,6 +58,8 @@ export interface IPage{
 }
 
 export class StaticSiteGenerator{
+  readonly lib: ILib;
+
   options: IStaticSiteGeneratorOptions = {
     srcDir: "src",
     buildDir: "build",
@@ -73,7 +75,9 @@ export class StaticSiteGenerator{
   private fileHandlers: IFileHandler[] = [];
   private pageHandlers: IPageHandler[] = [];
 
-  constructor(options?: IStaticSiteGeneratorOptions, logger?: ILogger){
+  constructor(lib: ILib, options?: IStaticSiteGeneratorOptions, logger?: ILogger){
+    this.lib = lib;
+
     if(options){
       this.options = {...this.options, ...options};
     }
@@ -84,20 +88,34 @@ export class StaticSiteGenerator{
     this.logger.info(`compression level: ${this.options.compressionLevel}`);
 
     this.configChanged();
+
+    // register file handlers
+
+    this.addFileHandler({extension: "json", message: "parsed", callback: async (data, file, filePath) => {
+      data[file.name] = JSON.parse(this.lib.fs.readTextFileSync(filePath));
+    }});
+
+    this.addFileHandler({extension: "yaml", message: "parsed", callback: async (data, file, filePath) => {
+      data[file.name] = this.lib.yaml(filePath);
+    }});
+
+    this.addFileHandler({extension: "yml", message: "parsed", callback: async (data, file, filePath) => {
+      data[file.name] = this.lib.yaml(filePath);
+    }});
   }
 
   loadConfig(name?: string): void{
     const configName = name ?? ".static-site-generator.config";
 
-    const jsonConfigPath = path.join(path.cwd(), `${configName}.json`);
-    const yamlConfigPath = path.join(path.cwd(), `${configName}.yaml`);
+    const jsonConfigPath = this.lib.path.join(this.lib.path.cwd(), `${configName}.json`);
+    const yamlConfigPath = this.lib.path.join(this.lib.path.cwd(), `${configName}.yaml`);
 
     // Import options file if found
-    if(fs.existsSync(jsonConfigPath)){
+    if(this.lib.fs.existsSync(jsonConfigPath)){
       try{
         this.options = {
           ...this.options,
-          ...JSON.parse(fs.readTextFileSync(jsonConfigPath))
+          ...JSON.parse(this.lib.fs.readTextFileSync(jsonConfigPath))
         };
         this.configChanged();
 
@@ -105,11 +123,11 @@ export class StaticSiteGenerator{
       }catch(e){
         this.logger.error(`unable to load json config: ${e}`);
       }
-    }else if(fs.existsSync(yamlConfigPath)){
+    }else if(this.lib.fs.existsSync(yamlConfigPath)){
       try{
         this.options = {
           ...this.options,
-          ...yaml(yamlConfigPath)
+          ...this.lib.yaml(yamlConfigPath)
         };
         this.configChanged();
 
@@ -144,7 +162,7 @@ export class StaticSiteGenerator{
    */
   addPageFile(extension: string): void{
     this.addFileHandler({extension, message: "found page", callback: async (data, file, filePath) => {
-      const page = fs.readTextFileSync(filePath);
+      const page = this.lib.fs.readTextFileSync(filePath);
 
       if(!page.startsWith("<!DOCTYPE html>")){
         this.logger.info(`${file.base} doesn't appear to be a page - skipping`);
@@ -165,8 +183,8 @@ export class StaticSiteGenerator{
   async getData(): Promise<Record<string, unknown>>{
     const data = {};
 
-    await utils.recurseDirectory(this.options.srcDir, async (filePath: string) => {
-      const file = path.parse(filePath);
+    await this.lib.utils.recurseDirectory(this.options.srcDir, async (filePath: string) => {
+      const file = this.lib.path.parse(filePath);
 
       for(const fileHandler of this.fileHandlers){
         if(file.ext === `.${fileHandler.extension}`){
@@ -186,12 +204,12 @@ export class StaticSiteGenerator{
    * @returns Promise that will resolve with html
    */
   async renderPage(pagePath: string, data: Record<string, unknown>): Promise<string>{
-    const file = path.parse(pagePath);
+    const file = this.lib.path.parse(pagePath);
 
     for(const pageHandler of this.pageHandlers){
       if(file.ext === `.${pageHandler.extension}`){
         const html = await pageHandler.callback(data, pagePath);
-        const minHtml = htmlMinifier(html, this.options.compressionLevel);
+        const minHtml = this.lib.htmlMinifier(html, this.options.compressionLevel);
 
         this.logger.success(`rendered ${file.base}`);
         return minHtml;
@@ -205,40 +223,40 @@ export class StaticSiteGenerator{
    * Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`
    */
   async build(): Promise<void>{
-    this.logger.info(`building ${path.parse(path.cwd()).base} to ${path.parse(this.options.buildDir).base}...`);
+    this.logger.info(`building ${this.lib.path.parse(this.lib.path.cwd()).base} to ${this.lib.path.parse(this.options.buildDir).base}...`);
     this.pages = [];
 
-    if(!fs.existsSync(this.options.srcDir)){
+    if(!this.lib.fs.existsSync(this.options.srcDir)){
       return this.logger.error("no src in current directory");
     }
 
-    if(!fs.existsSync(path.join(this.options.srcDir, "index.ejs"))){
+    if(!this.lib.fs.existsSync(this.lib.path.join(this.options.srcDir, "index.ejs"))){
       this.logger.warn("no index.ejs in src directory - this is NOT an error!");
     }
 
-    if(fs.existsSync(this.options.buildDir)){
-      utils.deleteDirectory(this.options.buildDir);
+    if(this.lib.fs.existsSync(this.options.buildDir)){
+      this.lib.utils.deleteDirectory(this.options.buildDir);
     }
 
-    fs.mkdirSync(this.options.buildDir);
+    this.lib.fs.mkdirSync(this.options.buildDir);
 
-    if(fs.existsSync(this.options.staticDir)){
+    if(this.lib.fs.existsSync(this.options.staticDir)){
       this.logger.info("copying static files...");
-      utils.copyDirectory(this.options.staticDir, this.options.buildDir);
+      this.lib.utils.copyDirectory(this.options.staticDir, this.options.buildDir);
     }
 
     const data = await this.getData();
 
     for(const page of this.pages){
-      const file = path.parse(page.filePath);
+      const file = this.lib.path.parse(page.filePath);
 
-      const targetDir = path.parse(path.join(this.options.buildDir, page.filePath.split(this.options.srcDir)[1])).dir;
+      const targetDir = this.lib.path.parse(this.lib.path.join(this.options.buildDir, page.filePath.split(this.options.srcDir)[1])).dir;
 
-      if(!fs.existsSync(targetDir)){
-        fs.mkdirSync(targetDir);
+      if(!this.lib.fs.existsSync(targetDir)){
+        this.lib.fs.mkdirSync(targetDir);
       }
 
-      fs.writeTextFileSync(path.join(targetDir, `${page.targetName ?? file.name}.html`), await this.renderPage(page.filePath, {...data, ...page.data}));
+      this.lib.fs.writeTextFileSync(this.lib.path.join(targetDir, `${page.targetName ?? file.name}.html`), await this.renderPage(page.filePath, {...data, ...page.data}));
     }
 
     this.logger.info("done!");
@@ -247,10 +265,8 @@ export class StaticSiteGenerator{
   private configChanged(): void{
     this.logger.level = this.options.logLevel;
 
-    this.options.srcDir = path.join(path.cwd(), this.options.srcDir);
-    this.options.buildDir = path.join(path.cwd(), this.options.buildDir);
-    this.options.staticDir = path.join(this.options.srcDir, this.options.staticDir);
+    this.options.srcDir = this.lib.path.join(this.lib.path.cwd(), this.options.srcDir);
+    this.options.buildDir = this.lib.path.join(this.lib.path.cwd(), this.options.buildDir);
+    this.options.staticDir = this.lib.path.join(this.options.srcDir, this.options.staticDir);
   }
 }
-
-export default StaticSiteGenerator;

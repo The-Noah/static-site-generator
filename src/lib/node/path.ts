@@ -1,3 +1,5 @@
+import {IPath} from "../lib.js";
+
 import {join, parse, resolve} from "path";
 
 export default {
@@ -5,4 +7,4 @@ export default {
   parse,
   resolve,
   cwd: (): string => process.cwd()
-};
+} as IPath;
