@@ -96,8 +96,8 @@ staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback
 }});
 
 // TOML File Handler
-staticSiteGenerator.addFileHandler({extension: "toml", message: "parsed", callback: async(data, file, filePath) => {
-  data[file.name] = toml.parse(fs.readFileSync(filePath, "utf8"));
+staticSiteGenerator.addFileHandler({extension: "toml", message: "parsed", callback: async (data, file, filePath) => {
+  data.toml[file.name] = toml.parse(fs.readFileSync(filePath, "utf8"));
 }});
 
 // register template extensions
