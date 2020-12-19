@@ -95,11 +95,12 @@ staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback
   });
 }});
 
-// TOML File Handler
+/** TOML File Handler */
 staticSiteGenerator.addFileHandler({extension: "toml", message: "parsed", callback: async (data, file, filePath) => {
-  if(!data.toml) {
+  if(!data.toml){
     data.toml = {};
   }
+
   data.toml[file.name] = toml.parse(fs.readFileSync(filePath, "utf8"));
 }});
 
