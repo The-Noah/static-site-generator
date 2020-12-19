@@ -44,6 +44,8 @@ assert("TypeScript", data.js.app, "let message=\"Hello, World!\";");
 
 assert("JSON", data.blog[0].date, "2020-5-6");
 
+assert("TOML", data.toml.toml.test, "Hello World");
+
 assert("YAML", data.test.test, "hello")
 
 assert("EJS", ejsHtml, "<h1>Hello, World!</h1>");
