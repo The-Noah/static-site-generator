@@ -1,6 +1,6 @@
 /**  Logging interface */
 export interface ILogger{
-  /** Level of logging to display */
+  /** Level of logging to display `0` = all, `1` = no info, `2` = no sucess, `3` = no warning, `4` = no error - each level also inherits from the last */
   level: number;
   /**
    * Output information
