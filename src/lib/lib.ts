@@ -7,15 +7,15 @@ export interface IUtils{
  */
   recurseDirectory: (dir: string, fileCallback?: (filePath: string) => void, directoryCallback?: (dirPath: string) => void) => Promise<void>;
   /**
- * Delete a directory recursively
- * @param dir - Path of directory to delete
- */
+   * Delete a directory recursively
+   * @param dir - Path of directory to delete
+   */
   deleteDirectory: (dir: string) => void;
   /**
- * Copy a directory recursively
- * @param source - Path of directory you wish to copy
- * @param target - Target path for copied directory
- */
+   * Copy a directory recursively
+   * @param source - Path of directory you wish to copy
+   * @param target - Target path for copied directory
+   */
   copyDirectory: (source: string, target: string) => void;
 }
 

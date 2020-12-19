@@ -20,9 +20,7 @@ import lib from "./lib/node/index.js";
 
 export const staticSiteGenerator = new StaticSiteGenerator(lib);
 
-/**
- * CSS file handler
- */
+/** CSS file handler */
 staticSiteGenerator.addFileHandler({extension: "css", message: "compressed", callback: async (data, file, filePath) => {
   if(!data.css){
     data.css = {};
@@ -34,9 +32,7 @@ staticSiteGenerator.addFileHandler({extension: "css", message: "compressed", cal
   })).css.toString();
 }});
 
-/**
- * SCSS file handler
- */
+/** SCSS file handler */
 staticSiteGenerator.addFileHandler({extension: "scss", message: "compiled", callback: async (data, file, filePath) => {
   if(!data.css){
     data.css = {};
@@ -48,9 +44,7 @@ staticSiteGenerator.addFileHandler({extension: "scss", message: "compiled", call
   })).css.toString();
 }});
 
-/**
- * JS file handler
- */
+/** JS file handler */
 staticSiteGenerator.addFileHandler({extension: "js", message: "compressed", callback: async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
@@ -60,9 +54,7 @@ staticSiteGenerator.addFileHandler({extension: "js", message: "compressed", call
   data.js[file.name] = staticSiteGenerator.options.compressionLevel >= 1 ? (await jsMinify(code)).code : code;
 }});
 
-/**
- * TS file handler
- */
+/** TS file handler */
 staticSiteGenerator.addFileHandler({extension: "ts", message: "compiled", callback: async (data, file, filePath) => {
   if(!data.js){
     data.js = {};
@@ -77,9 +69,7 @@ staticSiteGenerator.addFileHandler({extension: "ts", message: "compiled", callba
   data.js[file.name] = staticSiteGenerator.options.compressionLevel >= 1 ? (await jsMinify(jsCode)).code : jsCode;
 }});
 
-/**
- * Markdown file handler
- */
+/** Markdown file handler */
 staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback: async (data, file, filePath) => {
   if(!data.markdown){
     data.markdown = {};
@@ -109,9 +99,7 @@ staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback
 staticSiteGenerator.addPageFile("ejs");
 staticSiteGenerator.addPageFile("moe");
 
-/**
- * EJS template handler
- */
+/** EJS template handler */
 staticSiteGenerator.addPageHandler({extension: "ejs", callback: async (data, filePath): Promise<string> =>
   new Promise((resolve, reject) => ejs.renderFile(filePath, data, (err, html) => {
     if(err){
@@ -122,9 +110,7 @@ staticSiteGenerator.addPageHandler({extension: "ejs", callback: async (data, fil
   }))
 });
 
-/**
- * MOE template handler
- */
+/** MOE template handler */
 staticSiteGenerator.addPageHandler({extension: "moe", callback: async (data, filePath): Promise<string> => {
   const template = moe.compile(fs.readFileSync(filePath, "utf8"));
   return await template(data);

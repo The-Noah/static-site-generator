@@ -1,33 +1,19 @@
 import {ILogger, default as defaultLogger} from "./log.js";
 import {ILib} from "./lib/lib.js";
 
-/**
-  * Configuration options
-  */
+/** Configuration options */
 export interface IStaticSiteGeneratorOptions{
-  /**
-   * @property Path to look in for files
-   */
+  /** Path to look in for files */
   srcDir: string;
-  /**
-   * @property Path to save final files to
-   */
+  /** Path to save final files to */
   buildDir: string;
-  /**
-   * @property Path in srcDir to look for static files
-   */
+  /** Path in srcDir to look for static files */
   staticDir: string;
-  /**
-   * @property 0 = all, 1 = no info, 2 = no sucess, 3 = no warning, 4 = no error - each level also inherits from the last
-   */
+  /** 0 = all, 1 = no info, 2 = no sucess, 3 = no warning, 4 = no error - each level also inherits from the last */
   logLevel: number;
-  /**
-   * @property Template for markdown files
-   */
+  /** Template for markdown files */
   markdownTemplate: string | false;
-  /**
-   * @property How much to compress files - 0 = none, 3 = max
-   */
+  /** How much to compress files - 0 = none, 3 = max*/
   compressionLevel: number;
 }
 
@@ -43,17 +29,11 @@ export interface IPageHandler{
 }
 
 export interface IPage{
-  /**
-   * @property Path of page file
-   */
+  /** Path of page file */
   filePath: string;
-  /**
-   * @property Data of page file
-   */
+  /** Data of page file */
   data: Record<string, unknown>;
-  /**
-   * @property Name the file should be saved under
-   */
+  /** Name the file should be saved under */
   targetName?: string;
 }
 
@@ -104,6 +84,10 @@ export class StaticSiteGenerator{
     }});
   }
 
+  /**
+   * Loads configuration file
+   * @param name Name on file to load (default `.static-site-generator.config`)
+   */
   loadConfig(name?: string): void{
     const configName = name ?? ".static-site-generator.config";
 
@@ -219,9 +203,7 @@ export class StaticSiteGenerator{
     return "";
   }
 
-  /**
-   * Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir`
-   */
+  /** Renders all pages in `options.srcDir` and saves them in `options.buildDir`, as well as copies all files from `options.srcDir`/`options.staticDir` to `options.buildDir` */
   async build(): Promise<void>{
     this.logger.info(`building ${this.lib.path.parse(this.lib.path.cwd()).base} to ${this.lib.path.parse(this.options.buildDir).base}...`);
     this.pages = [];
@@ -262,6 +244,7 @@ export class StaticSiteGenerator{
     this.logger.info("done!");
   }
 
+  /** This should be called whenever the config changes */
   private configChanged(): void{
     this.logger.level = this.options.logLevel;
 

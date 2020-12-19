@@ -6,7 +6,7 @@ import {StaticSiteGenerator} from "./core";
 const PORT = 3000;
 const WS_PORT = 3001;
 
-// Setup command-line arguments and commands
+/** Setup command-line arguments and commands */
 export const cli = (staticSiteGenerator: StaticSiteGenerator): void => {
   staticSiteGenerator.loadConfig();
 
