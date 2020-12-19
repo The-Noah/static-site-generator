@@ -11,7 +11,8 @@ import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
-
+import SVGO from "svgo";
+const svgo = new SVGO();
 // optimization
 import {minify as jsMinify} from "terser";
 
@@ -94,7 +95,15 @@ staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback
     targetName: file.name
   });
 }});
-
+// SVG File Handler
+staticSiteGenerator.addFileHandler({extension: "svg", message:"compressed", callback: async (data, file, filePath) => {
+  if(!data.svg) {
+    data.svg = {};
+  }
+  svgo.optimize(fs.readFileSync(filePath, "utf8")).then((result) => {
+    data.svg[file.name] = result.data;
+  });
+}});
 // register template extensions
 staticSiteGenerator.addPageFile("ejs");
 staticSiteGenerator.addPageFile("moe");

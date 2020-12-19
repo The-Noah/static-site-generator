@@ -50,6 +50,8 @@ assert("EJS", ejsHtml, "<h1>Hello, World!</h1>");
 
 assert("MOE", moeHtml, "<h1>Hello, World!</h1>");
 
+assert("SVG", data.svg.test, "<svg width=\"10\" height=\"20\">test</svg>")
+
 const failedCount = tests.filter((test) => !test.passed).length;
 
 console.log();
