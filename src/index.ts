@@ -12,8 +12,11 @@ import typescript from "typescript";
 import marked from "marked";
 const markdownParser = require("markdown-yaml-metadata-parser");
 const toml = require("toml");
+
 // optimization
 import {minify as jsMinify} from "terser";
+import SVGO from "svgo";
+const svgo = new SVGO();
 
 import {StaticSiteGenerator} from "./core.js";
 import lib from "./lib/node/index.js";
@@ -92,6 +95,17 @@ staticSiteGenerator.addFileHandler({extension: "md", message: "parsed", callback
     filePath: path.join(staticSiteGenerator.options.srcDir, `${staticSiteGenerator.options.markdownTemplate}`),
     data: markdownData,
     targetName: file.name
+  });
+}});
+
+/** SVG File Handler */
+staticSiteGenerator.addFileHandler({extension: "svg", message: "compressed", callback: async (data, file, filePath) => {
+  if(!data.svg) {
+    data.svg = {};
+  }
+
+  svgo.optimize(fs.readFileSync(filePath, "utf8")).then((result) => {
+    data.svg[file.name] = result.data;
   });
 }});
 
