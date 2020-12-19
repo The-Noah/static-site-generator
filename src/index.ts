@@ -10,16 +10,46 @@ const moe = require("@toptensoftware/moe-js");
 import * as sass from "node-sass";
 import typescript from "typescript";
 import marked from "marked";
+const yaml = require("js-yaml");
 const markdownParser = require("markdown-yaml-metadata-parser");
-
+const toml = require("toml");
 // optimization
 import {minify as jsMinify} from "terser";
 
 import {StaticSiteGenerator} from "./core.js";
 import lib from "./lib/node/index.js";
 
+
 export const staticSiteGenerator = new StaticSiteGenerator(lib);
 
+// const staticSiteGenerator = new StaticSiteGenerator();
+
+/**
+ * JSON file handler
+ */
+staticSiteGenerator.addFileHandler({extension: "json", message: "parsed", callback: async (data, file, filePath) => {
+  data[file.name] = JSON.parse(fs.readFileSync(filePath, "utf8"));
+}});
+
+/**
+ * YAML (.yaml) File Handler
+ */
+staticSiteGenerator.addFileHandler({extension: "yaml", message: "parsed", callback: async (data, file, filePath) => {
+  data[file.name] = yaml.load(fs.readFileSync(filePath, "utf8"));
+}});
+
+/**
+ * YAML (.yml) File Handler
+ */
+staticSiteGenerator.addFileHandler({extension: "yml", message: "parsed", callback: async (data, file, filePath) => {
+  data[file.name] = yaml.load(fs.readFileSync(filePath, "utf8"));
+}});
+/**
+ * TOML (.toml) file Handler
+ */
+staticSiteGenerator.addFileHandler({extension: "toml", message: "parsed", callback: async(data, file, filePath) => {
+  data[file.name] = toml.parse(fs.readFileSync(filePath, "utf8"));
+}});
 /**
  * CSS file handler
  */
