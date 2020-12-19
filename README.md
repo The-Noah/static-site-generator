@@ -2,6 +2,7 @@
 
 # Static Site Generator
 
+![CI](https://github.com/The-Noah/static-site-generator/workflows/CI/badge.svg)
 [![GitHub license](https://img.shields.io/github/license/The-Noah/static-site-generator.svg)](https://github.com/The-Noah/static-site-generator/blob/master/LICENSE)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/The-Noah/static-site-generator)
 [![npm (scoped)](https://img.shields.io/npm/v/@the-noah/static-site-generator)](https://www.npmjs.com/package/@the-noah/static-site-generator)
